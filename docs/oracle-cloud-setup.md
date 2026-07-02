@@ -129,8 +129,9 @@ touch mosquitto/passwd
 docker run --rm -v $(pwd)/mosquitto:/mosquitto/config \
   eclipse-mosquitto:2 mosquitto_passwd -b -c /mosquitto/config/passwd bitshake <YOUR_PASSWORD_HERE>
 
-# Fix permissions so the Mosquitto container can read it
-sudo chmod 644 mosquitto/passwd
+# Fix permissions so the Mosquitto container can read it securely without warnings
+sudo chown 1883:1883 mosquitto/passwd
+sudo chmod 0700 mosquitto/passwd
 ```
 
 ## Step 8: Configure DNS
