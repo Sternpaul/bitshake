@@ -62,12 +62,14 @@ The SML script tells Tasmota how to parse the data from your electricity meter.
 
 | Setting | Value |
 |:--------|:------|
-| **Host** | `<YOUR_ORACLE_CLOUD_PUBLIC_IP>` |
-| **Port** | `1883` |
-| **User** | `bitshake` (must match `MQTT_USER` in your backend `.env`) |
-| **Password** | Your MQTT password (must match `MQTT_PASSWORD` in your backend `.env`) |
+| **Host** | `<your-cluster-url>.s1.eu.hivemq.cloud` |
+| **Port** | `8883` |
+| **Client** | `bitshake-device` |
+| **User** | `<your-hivemq-username>` |
+| **Password** | `<your-hivemq-password>` |
 | **Topic** | `bitshake` |
 | **Full Topic** | `%prefix%/%topic%/` |
+| **MQTT TLS** | ✅ **Check this box** (Required for HiveMQ) |
 
 3. Click **Save** — the device will reboot
 

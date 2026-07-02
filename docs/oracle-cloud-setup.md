@@ -31,9 +31,8 @@ Open these ports in your VCN's security list:
 | 22 | TCP | Your IP | SSH access |
 | 80 | TCP | 0.0.0.0/0 | HTTP (Caddy redirect) |
 | 443 | TCP | 0.0.0.0/0 | HTTPS (Caddy / API) |
-| 1883 | TCP | Your home IP | MQTT (Bitshake device) |
 
-> **Important:** Restrict port 1883 to your home IP address only. Do NOT open it to 0.0.0.0/0.
+
 
 ### How to add a Security List rule:
 
@@ -49,13 +48,11 @@ SSH into your instance and open the required ports:
 # Oracle Linux 9
 sudo firewall-cmd --permanent --add-port=80/tcp
 sudo firewall-cmd --permanent --add-port=443/tcp
-sudo firewall-cmd --permanent --add-port=1883/tcp
 sudo firewall-cmd --reload
 
 # Ubuntu 22.04
 sudo iptables -I INPUT -p tcp --dport 80 -j ACCEPT
 sudo iptables -I INPUT -p tcp --dport 443 -j ACCEPT
-sudo iptables -I INPUT -p tcp --dport 1883 -j ACCEPT
 sudo netfilter-persistent save
 ```
 
@@ -120,19 +117,17 @@ DOMAIN=api.yourdomain.com
 
 > **Tip:** Generate strong passwords with: `openssl rand -base64 32`
 
-## Step 7: Set Up Mosquitto Password
+## Step 7: Set Up HiveMQ Cloud Serverless
 
-```bash
-# Generate the Mosquitto password file
-mkdir -p mosquitto
-touch mosquitto/passwd
-docker run --rm -v $(pwd)/mosquitto:/mosquitto/config \
-  eclipse-mosquitto:2 mosquitto_passwd -b -c /mosquitto/config/passwd bitshake <YOUR_PASSWORD_HERE>
+Instead of running a local MQTT broker and exposing it to the internet, we use a free Cloud MQTT broker.
 
-# Fix permissions so the Mosquitto container can read it securely without warnings
-sudo chown 1883:1883 mosquitto/passwd
-sudo chmod 0700 mosquitto/passwd
-```
+1. Go to [HiveMQ Cloud](https://console.hivemq.cloud/) and sign up for a free Serverless cluster.
+2. Under "Access Management", create a set of credentials (username and password).
+3. Under "Cluster Details", copy your cluster URL.
+4. Update your `.env` file with these details:
+   - `MQTT_HOST=mqtts://<your-cluster-url>.s1.eu.hivemq.cloud:8883`
+   - `MQTT_USER=<your-hivemq-username>`
+   - `MQTT_PASSWORD=<your-hivemq-password>`
 
 ## Step 8: Configure DNS
 

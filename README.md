@@ -115,13 +115,6 @@ cd bitshake/backend
 cp .env.example .env
 nano .env  # Fill in all values — see comments in the file
 
-# Generate Mosquitto password file
-mkdir -p mosquitto
-touch mosquitto/passwd
-docker run --rm -v $(pwd)/mosquitto:/mosquitto/config \
-  eclipse-mosquitto:2 mosquitto_passwd -b -c /mosquitto/config/passwd bitshake <YOUR_PASSWORD_HERE>
-sudo chown 1883:1883 mosquitto/passwd
-sudo chmod 0700 mosquitto/passwd
 
 # Update Caddyfile with your domain
 nano caddy/Caddyfile

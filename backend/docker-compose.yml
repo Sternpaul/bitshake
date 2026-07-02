@@ -21,20 +21,7 @@ services:
     networks:
       - bitshake-net
 
-  # ── Mosquitto MQTT Broker ────────────────────────────────
-  mosquitto:
-    image: eclipse-mosquitto:2
-    container_name: bitshake-mosquitto
-    restart: unless-stopped
-    ports:
-      - "1883:1883"
-    volumes:
-      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
-      - ./mosquitto/passwd:/mosquitto/config/passwd:ro
-      - mosquitto_data:/mosquitto/data
-      - mosquitto_log:/mosquitto/log
-    networks:
-      - bitshake-net
+
 
   # ── TimescaleDB (PostgreSQL with time-series extension) ──
   timescaledb:
@@ -79,7 +66,7 @@ services:
       DB_NAME: ${DB_NAME:-bitshake}
       DB_USER: ${DB_USER:-bitshake}
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
-      MQTT_HOST: mqtt://mosquitto:1883
+      MQTT_HOST: ${MQTT_HOST:?MQTT_HOST is required}
       MQTT_USER: ${MQTT_USER:-bitshake}
       MQTT_PASSWORD: ${MQTT_PASSWORD:?MQTT_PASSWORD is required}
       MQTT_TOPIC: ${MQTT_TOPIC:-tele/+/SENSOR}
@@ -88,16 +75,12 @@ services:
     depends_on:
       timescaledb:
         condition: service_healthy
-      mosquitto:
-        condition: service_started
     networks:
       - bitshake-net
 
 volumes:
   caddy_data:
   caddy_config:
-  mosquitto_data:
-  mosquitto_log:
   timescaledb_data:
 
 networks:
