@@ -95,12 +95,12 @@ async function processReading(payload, topic) {
   const time = payload.Time ? new Date(payload.Time) : new Date();
 
   // Extract values with fallbacks for different Tasmota script naming conventions
-  const totalImport = sml.Total_in ?? sml.total_in ?? sml.Import ?? sml.Bezug ?? null;
-  const totalExport = sml.Total_out ?? sml.total_out ?? sml.Export ?? sml.Einspeisung ?? null;
+  const totalImport = sml.Total_in ?? sml.total_in ?? sml.Import ?? sml.Bezug ?? sml.ImportActive ?? null;
+  const totalExport = sml.Total_out ?? sml.total_out ?? sml.Export ?? sml.Einspeisung ?? sml.ExportActive ?? null;
   const powerCurrent = sml.Power_curr ?? sml.power_curr ?? sml.Power ?? sml.Leistung ?? null;
-  const powerL1 = sml.Power_L1 ?? sml.power_l1 ?? sml.P_L1 ?? null;
-  const powerL2 = sml.Power_L2 ?? sml.power_l2 ?? sml.P_L2 ?? null;
-  const powerL3 = sml.Power_L3 ?? sml.power_l3 ?? sml.P_L3 ?? null;
+  const powerL1 = sml.Power_L1 ?? sml.power_l1 ?? sml.power_L1 ?? sml.P_L1 ?? null;
+  const powerL2 = sml.Power_L2 ?? sml.power_l2 ?? sml.power_L2 ?? sml.P_L2 ?? null;
+  const powerL3 = sml.Power_L3 ?? sml.power_l3 ?? sml.power_L3 ?? sml.P_L3 ?? null;
 
   // Validate: at least one meaningful value
   if (totalImport === null && totalExport === null && powerCurrent === null) {
@@ -141,7 +141,7 @@ function findSmlData(payload) {
     const val = payload[key];
     if (typeof val === 'object' && val !== null) {
       // Check if it has energy-related keys
-      if ('Total_in' in val || 'total_in' in val || 'Power_curr' in val || 'Import' in val || 'Bezug' in val) {
+      if ('Total_in' in val || 'total_in' in val || 'Power_curr' in val || 'Import' in val || 'Bezug' in val || 'ImportActive' in val) {
         return val;
       }
     }
