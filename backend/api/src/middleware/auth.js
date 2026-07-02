@@ -10,13 +10,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'change-me-in-production';
  * Attaches decoded user to request.user.
  */
 export async function verifyToken(request, reply) {
-  let token = request.cookies.token;
+  const authHeader = request.headers.authorization;
+  let token = null;
 
-  if (!token) {
-    const authHeader = request.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.substring(7);
-    }
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.substring(7);
   }
 
   if (!token) {

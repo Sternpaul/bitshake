@@ -58,14 +58,8 @@ export default async function authRoutes(fastify) {
         username: user.username,
       });
 
-      reply.setCookie('token', token, {
-        path: '/',
-        httpOnly: true,
-        secure: true,
-        sameSite: 'none',
-      });
-
       return reply.send({
+        token,
         user: {
           id: user.id,
           username: user.username,
@@ -141,12 +135,13 @@ export default async function authRoutes(fastify) {
     });
   });
 
-  // POST /api/auth/logout — Clear cookie
-  fastify.post('/api/auth/logout', async (request, reply) => {
-    if (request.cookies.token) {
-      invalidateToken(request.cookies.token);
+  // POST /api/auth/logout
+  fastify.post('/api/auth/logout', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+    // Invalidate the token from the Authorization header
+    const authHeader = request.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      invalidateToken(authHeader.substring(7));
     }
-    reply.clearCookie('token', { path: '/', sameSite: 'none', secure: true });
     return reply.send({ message: 'Logged out successfully' });
   });
 }
