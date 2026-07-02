@@ -7,23 +7,20 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
  * @returns {Promise<any>}
  */
 export async function apiRequest(endpoint, options = {}) {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('bitshake_token') : null;
-
   const headers = {
     'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers,
   };
 
   const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
     headers,
+    credentials: 'include',
   });
 
   if (response.status === 401) {
     // Token expired — redirect to login
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('bitshake_token');
       localStorage.removeItem('bitshake_user');
       window.location.href = '/login';
     }
@@ -55,6 +52,7 @@ export async function login(username, password) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password }),
+    credentials: 'include',
   });
 
   if (!response.ok) {
@@ -63,7 +61,6 @@ export async function login(username, password) {
   }
 
   const data = await response.json();
-  localStorage.setItem('bitshake_token', data.token);
   localStorage.setItem('bitshake_user', JSON.stringify(data.user));
   return data;
 }
@@ -72,18 +69,11 @@ export async function login(username, password) {
  * Logout — clear stored credentials.
  */
 export async function logout() {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('bitshake_token') : null;
-  if (token) {
-    try {
-      await fetch(`${API_BASE}/api/auth/logout`, { 
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-    } catch (err) {
-      console.error('Logout failed:', err);
-    }
+  try {
+    await fetch(`${API_BASE}/api/auth/logout`, { method: 'POST', credentials: 'include' });
+  } catch (err) {
+    console.error('Logout failed:', err);
   }
-  localStorage.removeItem('bitshake_token');
   localStorage.removeItem('bitshake_user');
   window.location.href = '/login';
 }
@@ -94,7 +84,7 @@ export async function logout() {
  */
 export function isAuthenticated() {
   if (typeof window === 'undefined') return false;
-  return !!localStorage.getItem('bitshake_token');
+  return !!localStorage.getItem('bitshake_user');
 }
 
 /**
