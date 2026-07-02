@@ -9,6 +9,12 @@ import { generateToken } from '../middleware/auth.js';
 export default async function authRoutes(fastify) {
   // POST /api/auth/login — Authenticate and return JWT
   fastify.post('/api/auth/login', {
+    config: {
+      rateLimit: {
+        max: 5,
+        timeWindow: '1 minute'
+      }
+    },
     schema: {
       body: {
         type: 'object',
@@ -52,8 +58,14 @@ export default async function authRoutes(fastify) {
         username: user.username,
       });
 
+      reply.setCookie('token', token, {
+        path: '/',
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+      });
+
       return reply.send({
-        token,
         user: {
           id: user.id,
           username: user.username,
@@ -127,5 +139,11 @@ export default async function authRoutes(fastify) {
       valid: true,
       user: request.user,
     });
+  });
+
+  // POST /api/auth/logout — Clear cookie
+  fastify.post('/api/auth/logout', async (request, reply) => {
+    reply.clearCookie('token', { path: '/' });
+    return reply.send({ message: 'Logged out successfully' });
   });
 }

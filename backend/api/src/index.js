@@ -3,6 +3,7 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
+import fastifyCookie from '@fastify/cookie';
 import { verifyToken } from './middleware/auth.js';
 import { startMqttBridge, getMqttStatus, stopMqttBridge } from './mqtt-bridge.js';
 import authRoutes from './routes/auth.js';
@@ -30,10 +31,19 @@ await fastify.register(helmet, {
   contentSecurityPolicy: false, // Managed by Caddy
 });
 
+const corsOrigin = process.env.CORS_ORIGIN;
+if (!corsOrigin) {
+  throw new Error('CORS_ORIGIN environment variable is required');
+}
+
 await fastify.register(cors, {
-  origin: process.env.CORS_ORIGIN || '*',
+  origin: corsOrigin,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
+});
+
+await fastify.register(fastifyCookie, {
+  secret: process.env.JWT_SECRET || 'change-me-in-production',
 });
 
 await fastify.register(rateLimit, {
@@ -54,7 +64,9 @@ await fastify.register(statsRoutes);
 await fastify.register(settingsRoutes);
 
 // ── Health Check ────────────────────────────────────────────
-fastify.get('/api/health', async (request, reply) => {
+fastify.get('/api/health', {
+  preHandler: [fastify.authenticate],
+}, async (request, reply) => {
   const mqttStatus = getMqttStatus();
   return reply.send({
     status: 'ok',
@@ -68,14 +80,7 @@ fastify.get('/api/health', async (request, reply) => {
   });
 });
 
-// ── Stricter Rate Limit for Login ───────────────────────────
-fastify.addHook('onRoute', (routeOptions) => {
-  if (routeOptions.url === '/api/auth/login' && routeOptions.method === 'POST') {
-    const originalHandler = routeOptions.handler;
-    // Login gets a stricter rate limit of 5 attempts per minute
-    // (handled via the global rate limit plugin with custom key)
-  }
-});
+// Login rate limit is now handled directly in routes/auth.js
 
 // ── Start Server ────────────────────────────────────────────
 const start = async () => {
