@@ -59,7 +59,7 @@ export default function Header() {
           )}
           {mqttConnected !== undefined && (
             <span style={{ marginLeft: '12px', opacity: 0.7 }}>
-              {deviceActive ? '🔌 Device Active' : '🔌 Device Waiting...'}
+              {deviceActive ? '🔌 Bitshake Active' : '🔌 Bitshake Waiting...'}
             </span>
           )}
         </span>
