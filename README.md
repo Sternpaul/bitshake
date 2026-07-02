@@ -18,17 +18,18 @@ Electricity Meter ──(IR)──> Bitshake Air (Tasmota)
                               │ MQTT (JSON telemetry)
                               ▼
                     ┌─────────────────────┐
+                    │   HiveMQ            │ ← External MQTT Broker (Serverless)
+                    │   Cloud Cluster     │
+                    └─────────┬───────────┘
+                              │
+                              │ MQTT Subscription
+                              ▼
+                    ┌─────────────────────┐
                     │   Oracle Cloud VM    │
                     │   (Docker Compose)   │
                     │                     │
-                    │                     │
                     │ ┌─────────────────┐ │
-                    │ │   HiveMQ        │ │ ← External MQTT Broker
-                    │ │   Serverless    │ │
-                    │ └────────┬────────┘ │
-                    │          │          │
-                    │ ┌────────▼────────┐ │
-                    │ │  Fastify API    │ │ ← MQTT Bridge + REST API
+                    │ │  Fastify API    │ │ ← REST API
                     │ │  + MQTT Bridge  │ │
                     │ └────────┬────────┘ │
                     │          │          │
@@ -40,9 +41,9 @@ Electricity Meter ──(IR)──> Bitshake Air (Tasmota)
                     │ │   Cloudflared   │ │ ← Outbound Tunnel
                     │ │     Tunnel      │ │
                     │ └─────────────────┘ │
-                    └─────────────────────┘
-                               │
-                               │ HTTPS (Cloudflare Edge)
+                    └─────────┬───────────┘
+                              │
+                              │ HTTPS (Cloudflare Edge)
                               ▼
                     ┌─────────────────────┐
                     │   Vercel            │
