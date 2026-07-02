@@ -76,6 +76,7 @@ fastify.get('/api/health', {
       connected: mqttStatus.connected,
       messages_processed: mqttStatus.messageCount,
       last_reading_at: mqttStatus.lastReading?.time || null,
+      last_raw_payload: mqttStatus.lastRawPayload || null,
     },
   });
 });

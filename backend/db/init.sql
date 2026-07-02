@@ -101,7 +101,6 @@ SELECT add_continuous_aggregate_policy('daily_energy',
 );
 
 -- ============================================================
--- Data retention policy — keep raw data for 1 year
+-- Data retention policy — keep all data forever
 -- Aggregated data (hourly/daily views) stays forever
 -- ============================================================
-SELECT add_retention_policy('meter_readings', INTERVAL '1 year', if_not_exists => TRUE);

@@ -8,6 +8,7 @@ const MQTT_TOPIC = process.env.MQTT_TOPIC || 'tele/+/SENSOR';
 
 let client = null;
 let lastReading = null;
+let lastRawPayload = null;
 let messageCount = 0;
 
 /**
@@ -43,6 +44,7 @@ export function startMqttBridge() {
   client.on('message', async (topic, message) => {
     try {
       const payload = JSON.parse(message.toString());
+      lastRawPayload = payload;
       await processReading(payload, topic);
     } catch (err) {
       console.error('[MQTT] Failed to process message:', err.message);
@@ -155,6 +157,7 @@ export function getMqttStatus() {
     connected: client?.connected || false,
     messageCount,
     lastReading,
+    lastRawPayload,
   };
 }
 

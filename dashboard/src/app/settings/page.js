@@ -33,6 +33,9 @@ function SettingsContent() {
   const [exportTo, setExportTo] = useState('');
   const [exporting, setExporting] = useState(false);
 
+  // Device Data
+  const [healthData, setHealthData] = useState(null);
+
   useEffect(() => {
     if (!isAuthenticated()) {
       router.push('/login');
@@ -61,6 +64,20 @@ function SettingsContent() {
       }
     };
     loadSettings();
+
+    // Poll health data for raw payload
+    const loadHealth = async () => {
+      try {
+        const data = await api.getHealth();
+        setHealthData(data);
+      } catch (err) {
+        console.error('Failed to load health data:', err);
+      }
+    };
+    loadHealth();
+    const healthInterval = setInterval(loadHealth, 3000);
+
+    return () => clearInterval(healthInterval);
   }, [router]);
 
   const handleSaveSettings = async () => {
@@ -330,6 +347,30 @@ function SettingsContent() {
                 {changingPassword ? '⏳ Ändere...' : '🔑 Passwort ändern'}
               </button>
             </form>
+          </div>
+
+          {/* Device Diagnostics */}
+          <div className="settings-card" style={{ gridColumn: '1 / -1' }}>
+            <div className="settings-card-title">📡 Gerätediagnose (Rohdaten)</div>
+            <div className="form-hint" style={{ marginBottom: 'var(--space-4)' }}>
+              Hier sehen Sie die ungefilterten Live-Daten, die Ihr Bitshake/Tasmota-Lesekopf an den Server sendet.
+            </div>
+            
+            <div style={{
+              background: 'var(--surface-sunken)',
+              padding: 'var(--space-4)',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border)',
+              fontFamily: 'monospace',
+              fontSize: '0.85rem',
+              whiteSpace: 'pre-wrap',
+              overflowX: 'auto',
+              color: 'var(--text-secondary)'
+            }}>
+              {healthData?.mqtt?.last_raw_payload 
+                ? JSON.stringify(healthData.mqtt.last_raw_payload, null, 2) 
+                : 'Warte auf Daten...'}
+            </div>
           </div>
         </div>
       </main>
