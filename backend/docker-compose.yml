@@ -17,7 +17,7 @@ services:
     networks:
       - bitshake-net  # ── TimescaleDB (PostgreSQL with time-series extension) ──
   timescaledb:
-    image: timescale/timescaledb:2.15.0-pg16
+    image: timescale/timescaledb:2.28.2-pg16
     container_name: bitshake-timescaledb
     restart: unless-stopped
     # NOT exposed to host — only accessible within Docker network

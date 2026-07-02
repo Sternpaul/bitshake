@@ -20,5 +20,8 @@
     "jsonwebtoken": "^9.0.2",
     "mqtt": "^5.10.0",
     "pg": "^8.13.0"
+  },
+  "devDependencies": {
+    "pino-pretty": "^13.1.3"
   }
 }
