@@ -21,8 +21,8 @@ export default function MonthlyTrendChart({ data = [], loading }) {
   if (loading) {
     return (
       <div className="chart-card">
-        <div className="chart-title">This Month</div>
-        <div className="chart-subtitle">Daily energy trend</div>
+        <div className="chart-title">Dieser Monat</div>
+        <div className="chart-subtitle">Täglicher Energie-Trend</div>
         <div className="chart-wrapper">
           <div className="skeleton" style={{ width: '100%', height: '100%' }} />
         </div>
@@ -38,8 +38,8 @@ export default function MonthlyTrendChart({ data = [], loading }) {
 
   return (
     <div className="chart-card">
-      <div className="chart-title">This Month</div>
-      <div className="chart-subtitle">Daily energy consumption trend</div>
+      <div className="chart-title">Dieser Monat</div>
+      <div className="chart-subtitle">Trend des täglichen Energieverbrauchs</div>
       <div className="chart-wrapper">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={formattedData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -70,7 +70,7 @@ export default function MonthlyTrendChart({ data = [], loading }) {
             <Area
               type="monotone"
               dataKey="consumed"
-              name="Consumed"
+              name="Verbrauch"
               stroke="hsl(210, 100%, 60%)"
               fill="url(#monthConsumption)"
               strokeWidth={2}
@@ -79,7 +79,7 @@ export default function MonthlyTrendChart({ data = [], loading }) {
             <Area
               type="monotone"
               dataKey="exported"
-              name="Exported"
+              name="Einspeisung"
               stroke="hsl(38, 92%, 55%)"
               fill="url(#monthExport)"
               strokeWidth={2}

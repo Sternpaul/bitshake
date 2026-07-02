@@ -85,9 +85,9 @@ function DashboardContent() {
 
       <main className="main-content">
         <div className="page-header">
-          <h1 className="page-title">Dashboard</h1>
+          <h1 className="page-title">Übersicht</h1>
           <p className="page-subtitle">
-            Real-time energy monitoring — Bitshake Smart Meter Reader Air
+            Echtzeit-Energieüberwachung — Bitshake Smart Meter Reader Air
           </p>
         </div>
 
@@ -95,43 +95,43 @@ function DashboardContent() {
         <div className="kpi-grid">
           <KPICard
             icon="⚡"
-            label="Current Power"
+            label="Aktuelle Leistung"
             value={current ? `${Math.abs(Math.round(current.power))}` : '—'}
             unit="W"
             variant={current?.power < 0 ? 'solar' : 'consumption'}
-            detail={current ? (current.power < 0 ? '↑ Feeding to grid' : '↓ Consuming from grid') : 'Waiting for data...'}
+            detail={current ? (current.power < 0 ? '↑ Einspeisung ins Netz' : '↓ Bezug aus dem Netz') : 'Warte auf Daten...'}
             loading={loading}
           />
           <KPICard
             icon="📊"
-            label="Today's Consumption"
+            label="Heutiger Verbrauch"
             value={formatNumber(today?.consumed_kwh)}
             unit="kWh"
             variant="consumption"
-            detail={`Peak: ${formatNumber(today?.peak_power, 0)} W`}
+            detail={`Spitze: ${formatNumber(today?.peak_power, 0)} W`}
             loading={loading}
           />
           <KPICard
             icon="☀️"
-            label="Today's Feed-in"
+            label="Heutige Einspeisung"
             value={formatNumber(today?.exported_kwh)}
             unit="kWh"
             variant="solar"
-            detail="Exported to grid"
+            detail="Ins Netz eingespeist"
             loading={loading}
           />
           <KPICard
             icon="🔋"
-            label="Self-Consumption"
+            label="Eigenverbrauch"
             value={today ? `${Math.round((today.self_consumption_rate || 0) * 100)}` : '—'}
             unit="%"
             variant="success"
-            detail="Energy used vs total"
+            detail="Genutzte Energie vs. Gesamt"
             loading={loading}
           />
           <KPICard
             icon="💰"
-            label="Today's Cost"
+            label="Heutige Kosten"
             value={formatCurrency(today?.cost, settings?.currency)}
             variant="cost"
             detail={`@ ${formatNumber(settings?.electricity_price, 2)} €/kWh`}
@@ -139,10 +139,10 @@ function DashboardContent() {
           />
           <KPICard
             icon="💵"
-            label="Today's Earnings"
+            label="Heutige Ersparnis"
             value={formatCurrency(today?.earnings, settings?.currency)}
             variant="solar"
-            detail={settings?.feedin_tariff > 0 ? `@ ${formatNumber(settings?.feedin_tariff, 2)} €/kWh` : 'No feed-in tariff set'}
+            detail={settings?.feedin_tariff > 0 ? `@ ${formatNumber(settings?.feedin_tariff, 2)} €/kWh` : 'Keine Einspeisevergütung'}
             loading={loading}
           />
         </div>
@@ -163,10 +163,10 @@ function DashboardContent() {
         {!loading && !current && (
           <div className="empty-state" style={{ marginTop: 'var(--space-8)' }}>
             <div className="empty-state-icon">📡</div>
-            <div className="empty-state-title">Waiting for Data</div>
+            <div className="empty-state-title">Warte auf Daten</div>
             <div className="empty-state-text">
-              Your Bitshake Smart Meter Reader hasn&apos;t sent any data yet.
-              Make sure MQTT is configured correctly and the device is online.
+              Dein Bitshake Smart Meter Reader hat noch keine Daten gesendet.
+              Bitte stelle sicher, dass MQTT korrekt konfiguriert und das Gerät online ist.
             </div>
           </div>
         )}

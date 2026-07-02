@@ -21,8 +21,8 @@ export default function DailyPowerCurve({ data = [], loading }) {
   if (loading) {
     return (
       <div className="chart-card">
-        <div className="chart-title">Today&apos;s Power Curve</div>
-        <div className="chart-subtitle">Consumption vs Feed-in over 24 hours</div>
+        <div className="chart-title">Heutige Leistungskurve</div>
+        <div className="chart-subtitle">Bezug vs. Einspeisung über 24 Stunden</div>
         <div className="chart-wrapper">
           <div className="skeleton" style={{ width: '100%', height: '100%' }} />
         </div>
@@ -38,8 +38,8 @@ export default function DailyPowerCurve({ data = [], loading }) {
 
   return (
     <div className="chart-card">
-      <div className="chart-title">Today&apos;s Power Curve</div>
-      <div className="chart-subtitle">Average power per 5-minute interval</div>
+      <div className="chart-title">Heutige Leistungskurve</div>
+      <div className="chart-subtitle">Durchschnittliche Leistung pro 5-Minuten-Intervall</div>
       <div className="chart-wrapper">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={formattedData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -72,7 +72,7 @@ export default function DailyPowerCurve({ data = [], loading }) {
             <Area
               type="monotone"
               dataKey="consumption"
-              name="Consumption"
+              name="Bezug"
               stroke="hsl(210, 100%, 60%)"
               fill="url(#consumptionGradient)"
               strokeWidth={2}
@@ -81,7 +81,7 @@ export default function DailyPowerCurve({ data = [], loading }) {
             <Area
               type="monotone"
               dataKey="feedin"
-              name="Feed-in"
+              name="Einspeisung"
               stroke="hsl(38, 92%, 55%)"
               fill="url(#feedinGradient)"
               strokeWidth={2}

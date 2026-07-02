@@ -21,8 +21,8 @@ export default function WeeklyEnergyChart({ data = [], loading }) {
   if (loading) {
     return (
       <div className="chart-card">
-        <div className="chart-title">This Week</div>
-        <div className="chart-subtitle">Daily energy import vs export</div>
+        <div className="chart-title">Diese Woche</div>
+        <div className="chart-subtitle">Täglicher Bezug vs. Einspeisung</div>
         <div className="chart-wrapper">
           <div className="skeleton" style={{ width: '100%', height: '100%' }} />
         </div>
@@ -30,7 +30,7 @@ export default function WeeklyEnergyChart({ data = [], loading }) {
     );
   }
 
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const dayNames = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
 
   const formattedData = data.map(d => {
     const date = new Date(d.bucket);
@@ -44,8 +44,8 @@ export default function WeeklyEnergyChart({ data = [], loading }) {
 
   return (
     <div className="chart-card">
-      <div className="chart-title">This Week</div>
-      <div className="chart-subtitle">Daily energy consumption vs solar feed-in</div>
+      <div className="chart-title">Diese Woche</div>
+      <div className="chart-subtitle">Täglicher Stromverbrauch vs. Einspeisung</div>
       <div className="chart-wrapper">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={formattedData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -64,14 +64,14 @@ export default function WeeklyEnergyChart({ data = [], loading }) {
             <Legend wrapperStyle={{ fontSize: '12px' }} />
             <Bar
               dataKey="consumed"
-              name="Consumed"
+              name="Verbrauch"
               fill="hsl(210, 100%, 60%)"
               radius={[4, 4, 0, 0]}
               maxBarSize={40}
             />
             <Bar
               dataKey="exported"
-              name="Exported"
+              name="Einspeisung"
               fill="hsl(38, 92%, 55%)"
               radius={[4, 4, 0, 0]}
               maxBarSize={40}

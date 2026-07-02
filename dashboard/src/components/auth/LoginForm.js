@@ -23,7 +23,7 @@ export default function LoginForm() {
       onLogin(data.user);
       router.push('/');
     } catch (err) {
-      setError(err.message || 'Login failed. Please check your credentials.');
+      setError(err.message || 'Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Zugangsdaten.');
     } finally {
       setLoading(false);
     }
@@ -41,7 +41,7 @@ export default function LoginForm() {
 
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label className="form-label" htmlFor="login-username">Username</label>
+              <label className="form-label" htmlFor="login-username">Benutzername</label>
               <input
                 id="login-username"
                 className="form-input"
@@ -56,7 +56,7 @@ export default function LoginForm() {
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="login-password">Password</label>
+              <label className="form-label" htmlFor="login-password">Passwort</label>
               <input
                 id="login-password"
                 className="form-input"
@@ -74,7 +74,7 @@ export default function LoginForm() {
               className="btn btn-primary login-btn"
               disabled={loading}
             >
-              {loading ? '⏳ Signing in...' : '🔐 Sign In'}
+              {loading ? '⏳ Melde an...' : '🔐 Anmelden'}
             </button>
           </form>
         </div>

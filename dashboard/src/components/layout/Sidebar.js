@@ -5,9 +5,9 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 
 const navItems = [
-  { href: '/', icon: '📊', label: 'Dashboard' },
-  { href: '/analytics', icon: '📈', label: 'Analytics' },
-  { href: '/settings', icon: '⚙️', label: 'Settings' },
+  { href: '/', icon: '📊', label: 'Übersicht' },
+  { href: '/analytics', icon: '📈', label: 'Analysen' },
+  { href: '/settings', icon: '⚙️', label: 'Einstellungen' },
 ];
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -28,7 +28,7 @@ export default function Sidebar({ isOpen, onClose }) {
           <div className="sidebar-logo">⚡</div>
           <div>
             <div className="sidebar-brand">Bitshake</div>
-            <div className="sidebar-brand-sub">Energy Monitor</div>
+            <div className="sidebar-brand-sub">Energiemonitor</div>
           </div>
         </div>
 
@@ -50,10 +50,10 @@ export default function Sidebar({ isOpen, onClose }) {
         {/* Footer */}
         <div className="sidebar-footer">
           <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-3)' }}>
-            Logged in as <strong style={{ color: 'var(--text-secondary)' }}>{user?.username || 'admin'}</strong>
+            Angemeldet als <strong style={{ color: 'var(--text-secondary)' }}>{user?.username || 'admin'}</strong>
           </div>
           <button className="btn btn-secondary btn-sm" onClick={logout} style={{ width: '100%' }}>
-            🚪 Logout
+            🚪 Abmelden
           </button>
         </div>
       </aside>

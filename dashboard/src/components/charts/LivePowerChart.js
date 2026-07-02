@@ -21,8 +21,8 @@ export default function LivePowerChart({ data = [], loading }) {
   if (loading) {
     return (
       <div className="chart-card full-width">
-        <div className="chart-title">Live Power</div>
-        <div className="chart-subtitle">Last 30 minutes — updates every 10 seconds</div>
+        <div className="chart-title">Aktuelle Leistung</div>
+        <div className="chart-subtitle">Letzte 30 Minuten — aktualisiert alle 10 Sekunden</div>
         <div className="chart-wrapper">
           <div className="skeleton" style={{ width: '100%', height: '100%' }} />
         </div>
@@ -44,8 +44,8 @@ export default function LivePowerChart({ data = [], loading }) {
     <div className="chart-card full-width">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <div className="chart-title">Live Power</div>
-          <div className="chart-subtitle">Last 30 minutes — updates every 10 seconds</div>
+          <div className="chart-title">Aktuelle Leistung</div>
+          <div className="chart-subtitle">Letzte 30 Minuten — aktualisiert alle 10 Sekunden</div>
         </div>
         <div style={{
           fontSize: '1.5rem',
@@ -55,7 +55,7 @@ export default function LivePowerChart({ data = [], loading }) {
         }}>
           {Math.abs(Math.round(latestPower))} W
           <span style={{ fontSize: '0.75rem', fontWeight: 400, marginLeft: '4px', color: 'var(--text-tertiary)' }}>
-            {isExporting ? '↑ feeding' : '↓ consuming'}
+            {isExporting ? '↑ Einspeisung' : '↓ Bezug'}
           </span>
         </div>
       </div>
@@ -87,7 +87,7 @@ export default function LivePowerChart({ data = [], loading }) {
             <Area
               type="monotone"
               dataKey="power"
-              name="Power"
+              name="Leistung"
               stroke="hsl(210, 100%, 60%)"
               fill="url(#powerGradient)"
               strokeWidth={2}
