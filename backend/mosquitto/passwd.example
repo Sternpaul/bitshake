@@ -1,0 +1,14 @@
+# ============================================================
+# Mosquitto Password File — TEMPLATE
+# ============================================================
+# This is a placeholder. You must generate the real passwd file
+# on your Oracle Cloud server using the mosquitto_passwd utility:
+#
+#   docker run --rm -v $(pwd)/mosquitto:/mosquitto/config \
+#     eclipse-mosquitto:2 mosquitto_passwd -c /mosquitto/config/passwd bitshake
+#
+# This will prompt you for a password. Use the same password
+# as MQTT_PASSWORD in your .env file.
+#
+# The real passwd file is gitignored for security.
+# ============================================================

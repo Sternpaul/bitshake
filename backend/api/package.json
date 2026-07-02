@@ -1,0 +1,23 @@
+{
+  "name": "bitshake-api",
+  "version": "1.0.0",
+  "description": "Bitshake Smart Meter Reader — API Server & MQTT Bridge",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "setup-user": "node src/setup-user.js"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.0",
+    "@fastify/helmet": "^13.0.0",
+    "@fastify/rate-limit": "^10.0.0",
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.5",
+    "fastify": "^5.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "mqtt": "^5.10.0",
+    "pg": "^8.13.0"
+  }
+}

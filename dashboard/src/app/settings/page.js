@@ -1,0 +1,346 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { isAuthenticated, api } from '@/lib/api';
+import { AuthProvider } from '@/lib/auth-context';
+import Sidebar from '@/components/layout/Sidebar';
+import Header from '@/components/layout/Header';
+
+function SettingsContent() {
+  const router = useRouter();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  // Settings state
+  const [electricityPrice, setElectricityPrice] = useState('0.35');
+  const [feedinTariff, setFeedinTariff] = useState('0.00');
+  const [currency, setCurrency] = useState('EUR');
+  const [refreshInterval, setRefreshInterval] = useState('10');
+
+  // Password change
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  // CSV Export
+  const [exportFrom, setExportFrom] = useState('');
+  const [exportTo, setExportTo] = useState('');
+  const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      router.push('/login');
+      return;
+    }
+
+    // Set default dates for export
+    const today = new Date().toISOString().split('T')[0];
+    const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+    setExportFrom(weekAgo);
+    setExportTo(today);
+
+    // Load current settings
+    const loadSettings = async () => {
+      try {
+        const result = await api.getSettings();
+        const s = result.data;
+        if (s.electricity_price) setElectricityPrice(s.electricity_price.value);
+        if (s.feedin_tariff) setFeedinTariff(s.feedin_tariff.value);
+        if (s.currency) setCurrency(s.currency.value);
+        if (s.dashboard_refresh_seconds) setRefreshInterval(s.dashboard_refresh_seconds.value);
+      } catch (err) {
+        console.error('Failed to load settings:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadSettings();
+  }, [router]);
+
+  const handleSaveSettings = async () => {
+    setSaving(true);
+    setSaved(false);
+    try {
+      await api.updateSettings({
+        electricity_price: electricityPrice,
+        feedin_tariff: feedinTariff,
+        currency,
+        dashboard_refresh_seconds: refreshInterval,
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      alert('Failed to save settings: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess('');
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPasswordError('Password must be at least 8 characters');
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      await api.changePassword(currentPassword, newPassword);
+      setPasswordSuccess('Password changed successfully');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      setPasswordError(err.message || 'Failed to change password');
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  const handleExport = async () => {
+    if (!exportFrom || !exportTo) return;
+    setExporting(true);
+    try {
+      await api.exportCSV(exportFrom, exportTo);
+    } catch (err) {
+      alert('Export failed: ' + err.message);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  return (
+    <div className="app-layout">
+      <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Header />
+
+      <main className="main-content">
+        <div className="page-header">
+          <h1 className="page-title">Settings</h1>
+          <p className="page-subtitle">Configure your energy tariffs, dashboard preferences, and account</p>
+        </div>
+
+        <div className="settings-grid">
+          {/* Tariff Settings */}
+          <div className="settings-card">
+            <div className="settings-card-title">💰 Energy Tariffs</div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="settings-price">Electricity Price</label>
+              <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+                <input
+                  id="settings-price"
+                  className="form-input"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="10"
+                  value={electricityPrice}
+                  onChange={(e) => setElectricityPrice(e.target.value)}
+                  style={{ flex: 1 }}
+                />
+                <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>€/kWh</span>
+              </div>
+              <div className="form-hint">Current price you pay per kWh imported from the grid</div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="settings-tariff">Feed-in Tariff (Einspeisevergütung)</label>
+              <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+                <input
+                  id="settings-tariff"
+                  className="form-input"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="10"
+                  value={feedinTariff}
+                  onChange={(e) => setFeedinTariff(e.target.value)}
+                  style={{ flex: 1 }}
+                />
+                <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>€/kWh</span>
+              </div>
+              <div className="form-hint">Amount you receive per kWh exported to the grid. Set to 0 if none.</div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="settings-currency">Currency</label>
+              <select
+                id="settings-currency"
+                className="form-select"
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+              >
+                <option value="EUR">EUR (€)</option>
+                <option value="USD">USD ($)</option>
+                <option value="GBP">GBP (£)</option>
+                <option value="CHF">CHF (Fr.)</option>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', marginTop: 'var(--space-6)' }}>
+              <button
+                className="btn btn-primary"
+                onClick={handleSaveSettings}
+                disabled={saving}
+              >
+                {saving ? '⏳ Saving...' : '💾 Save Settings'}
+              </button>
+              {saved && <span className="settings-saved">✅ Saved!</span>}
+            </div>
+          </div>
+
+          {/* Dashboard Settings */}
+          <div className="settings-card">
+            <div className="settings-card-title">⚙️ Dashboard Preferences</div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="settings-refresh">Auto-Refresh Interval</label>
+              <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+                <input
+                  id="settings-refresh"
+                  className="form-input"
+                  type="number"
+                  min="5"
+                  max="300"
+                  value={refreshInterval}
+                  onChange={(e) => setRefreshInterval(e.target.value)}
+                  style={{ flex: 1 }}
+                />
+                <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>seconds</span>
+              </div>
+              <div className="form-hint">How often the dashboard refreshes data (5–300 seconds)</div>
+            </div>
+
+            <div style={{ marginTop: 'var(--space-8)' }}>
+              <div className="settings-card-title" style={{ fontSize: '1rem' }}>📦 Export Data</div>
+              <div style={{ display: 'flex', gap: 'var(--space-4)', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" htmlFor="export-from">From</label>
+                  <input
+                    id="export-from"
+                    className="form-input"
+                    type="date"
+                    value={exportFrom}
+                    onChange={(e) => setExportFrom(e.target.value)}
+                  />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" htmlFor="export-to">To</label>
+                  <input
+                    id="export-to"
+                    className="form-input"
+                    type="date"
+                    value={exportTo}
+                    onChange={(e) => setExportTo(e.target.value)}
+                  />
+                </div>
+                <button
+                  className="btn btn-secondary"
+                  onClick={handleExport}
+                  disabled={exporting}
+                >
+                  {exporting ? '⏳ Exporting...' : '📥 Download CSV'}
+                </button>
+              </div>
+              <div className="form-hint" style={{ marginTop: 'var(--space-2)' }}>
+                Export raw meter readings as CSV for the selected date range
+              </div>
+            </div>
+          </div>
+
+          {/* Password Change */}
+          <div className="settings-card">
+            <div className="settings-card-title">🔐 Change Password</div>
+
+            {passwordError && <div className="login-error" style={{ marginBottom: 'var(--space-4)' }}>{passwordError}</div>}
+            {passwordSuccess && (
+              <div style={{
+                background: 'var(--success-bg)',
+                border: '1px solid var(--success)',
+                borderRadius: 'var(--radius-sm)',
+                padding: 'var(--space-3) var(--space-4)',
+                color: 'var(--success)',
+                fontSize: '0.85rem',
+                marginBottom: 'var(--space-4)',
+              }}>
+                {passwordSuccess}
+              </div>
+            )}
+
+            <form onSubmit={handleChangePassword}>
+              <div className="form-group">
+                <label className="form-label" htmlFor="current-password">Current Password</label>
+                <input
+                  id="current-password"
+                  className="form-input"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label" htmlFor="new-password">New Password</label>
+                <input
+                  id="new-password"
+                  className="form-input"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                />
+                <div className="form-hint">Minimum 8 characters</div>
+              </div>
+              <div className="form-group">
+                <label className="form-label" htmlFor="confirm-password">Confirm New Password</label>
+                <input
+                  id="confirm-password"
+                  className="form-input"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                />
+              </div>
+              <button
+                type="submit"
+                className="btn btn-secondary"
+                disabled={changingPassword}
+              >
+                {changingPassword ? '⏳ Changing...' : '🔑 Change Password'}
+              </button>
+            </form>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <AuthProvider>
+      <SettingsContent />
+    </AuthProvider>
+  );
+}
