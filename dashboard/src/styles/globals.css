@@ -7,13 +7,13 @@
 
 /* ── CSS Custom Properties (Design Tokens) ──────────────── */
 :root {
-  /* Colors — Light Theme (Default) */
   --bg-primary: hsl(210, 20%, 98%);
   --bg-secondary: hsl(0, 0%, 100%);
   --bg-surface: hsl(0, 0%, 100%);
   --bg-surface-hover: hsl(210, 16%, 95%);
   --bg-glass: rgba(0, 0, 0, 0.02);
   --bg-glass-hover: rgba(0, 0, 0, 0.04);
+  --header-bg: rgba(255, 255, 255, 0.8);
 
   /* Borders */
   --border-subtle: rgba(0, 0, 0, 0.06);
@@ -97,6 +97,7 @@
   --bg-surface-hover: hsl(222, 35%, 16%);
   --bg-glass: rgba(255, 255, 255, 0.04);
   --bg-glass-hover: rgba(255, 255, 255, 0.07);
+  --header-bg: rgba(11, 15, 25, 0.8);
 
   /* Borders */
   --border-subtle: rgba(255, 255, 255, 0.06);
@@ -359,7 +360,7 @@ a:hover {
   left: var(--sidebar-width);
   right: 0;
   height: var(--header-height);
-  background: rgba(11, 15, 25, 0.8);
+  background: var(--header-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-subtle);
