@@ -92,7 +92,10 @@ async function processReading(payload, topic) {
     return;
   }
 
-  const time = payload.Time ? new Date(payload.Time) : new Date();
+  // Ignore Tasmota's payload.Time entirely. ESP8266/ESP32 clocks often drift or
+  // lack proper timezone/DST configurations, resulting in 1-2 hour display offsets.
+  // Using the server's NTP-synced clock guarantees standard UTC timestamps.
+  const time = new Date();
 
   // Extract values with fallbacks for different Tasmota script naming conventions
   const totalImport = sml.Total_in ?? sml.total_in ?? sml.Import ?? sml.Bezug ?? sml.ImportActive ?? null;
