@@ -2,11 +2,11 @@
 
 A comprehensive, real-time energy monitoring dashboard for the **Bitshake Smart Meter Reader Air**. Track electricity consumption, solar feed-in, costs, and detailed analytics — all in a premium, dark-themed web interface.
 
-![Stack](https://img.shields.io/badge/Next.js-15-black?logo=next.js)
-![Stack](https://img.shields.io/badge/Fastify-5-white?logo=fastify)
-![Stack](https://img.shields.io/badge/TimescaleDB-PostgreSQL-blue?logo=postgresql)
-![Stack](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)
-![Stack](https://img.shields.io/badge/MQTT-HiveMQ-purple?logo=hivemq)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
+[![Fastify](https://img.shields.io/badge/Fastify-5-white?logo=fastify)](https://fastify.dev/)
+[![TimescaleDB](https://img.shields.io/badge/TimescaleDB-PostgreSQL-blue?logo=postgresql)](https://www.timescale.com/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)](https://www.docker.com/)
+[![HiveMQ](https://img.shields.io/badge/MQTT-HiveMQ-purple?logo=hivemq)](https://www.hivemq.com/)
 
 ---
 
@@ -36,14 +36,13 @@ Electricity Meter ──(IR)──> Bitshake Air (Tasmota)
                     │ │  TimescaleDB    │ │ ← Time-series optimized
                     │ │  (PostgreSQL)   │ │
                     │ └─────────────────┘ │
-                    │                     │
                     │ ┌─────────────────┐ │
-                    │ │     Caddy       │ │ ← Port 443 (auto-SSL)
-                    │ │  Reverse Proxy  │ │
+                    │ │   Cloudflared   │ │ ← Outbound Tunnel
+                    │ │     Tunnel      │ │
                     │ └─────────────────┘ │
                     └─────────────────────┘
-                              │
-                              │ HTTPS
+                               │
+                               │ HTTPS (Cloudflare Edge)
                               ▼
                     ┌─────────────────────┐
                     │   Vercel            │
@@ -78,7 +77,7 @@ Electricity Meter ──(IR)──> Bitshake Air (Tasmota)
 - JWT-based authentication (24h expiry)
 - MQTT broker (HiveMQ Serverless) with TLS and username/password auth
 - Database isolated in Docker network (not exposed)
-- HTTPS via Caddy auto-SSL (Let's Encrypt)
+- Secure ingress via Cloudflare Tunnel (no open ports needed)
 - OCI Security Lists for port-level firewall
 - Rate-limited login endpoint
 
@@ -152,13 +151,7 @@ See [docs/vercel-deploy.md](docs/vercel-deploy.md) for detailed instructions.
 
 ### 4. DNS Setup
 
-Add an A record for your API domain:
-
-| Type | Name | Value |
-|:-----|:-----|:------|
-| A | `api` | `<Oracle Cloud Public IP>` |
-
-Caddy will automatically obtain a Let's Encrypt SSL certificate.
+Add a CNAME record in your Cloudflare dashboard pointing your API subdomain (e.g., `api.yourdomain.com`) to your Cloudflare Tunnel UUID (e.g., `<uuid>.cfargotunnel.com`). Cloudflare automatically handles the Let's Encrypt SSL certificates.
 
 ---
 
@@ -169,7 +162,6 @@ bitshake/
 ├── backend/                        # Oracle Cloud (Dockerized)
 │   ├── docker-compose.yml          # 3-container stack
 │   ├── .env.example                # Environment template
-│   ├── caddy/Caddyfile             # Reverse proxy config
 │   ├── db/init.sql                 # Database schema
 │   └── api/
 │       ├── Dockerfile
