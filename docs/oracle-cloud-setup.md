@@ -121,11 +121,11 @@ DOMAIN=api.yourdomain.com
 
 Instead of running a local MQTT broker and exposing it to the internet, we use a free Cloud MQTT broker.
 
-1. Go to [HiveMQ Cloud](https://console.hivemq.cloud/) and sign up for a free Serverless cluster.
+1. Go to [HiveMQ Cloud](https://console.hivemq.cloud/) and sign up for a free Serverless broker.
 2. Under "Access Management", create a set of credentials (username and password).
-3. Under "Cluster Details", copy your cluster URL.
+3. Under "Broker Details", copy your broker URL.
 4. Update your `.env` file with these details:
-   - `MQTT_HOST=mqtts://<your-cluster-url>.s1.eu.hivemq.cloud:8883`
+   - `MQTT_HOST=mqtts://<your-broker-url>.s1.eu.hivemq.cloud:8883`
    - `MQTT_USER=<your-hivemq-username>`
    - `MQTT_PASSWORD=<your-hivemq-password>`
 
