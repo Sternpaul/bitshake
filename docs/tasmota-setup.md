@@ -62,7 +62,7 @@ The SML script tells Tasmota how to parse the data from your electricity meter.
 
 | Setting | Value |
 |:--------|:------|
-| **Host** | `<your-broker-url>.s1.eu.hivemq.cloud` |
+| **Host** | `<your-broker-url>.s1.eu.hivemq.cloud` (Listed as "TLS MQTT URL" in HiveMQ) |
 | **Port** | `8883` |
 | **Client** | `bitshake-device` |
 | **User** | `<your-hivemq-username>` |
