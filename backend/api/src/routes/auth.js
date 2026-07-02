@@ -61,8 +61,8 @@ export default async function authRoutes(fastify) {
       reply.setCookie('token', token, {
         path: '/',
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        secure: true,
+        sameSite: 'none',
       });
 
       return reply.send({
@@ -146,7 +146,7 @@ export default async function authRoutes(fastify) {
     if (request.cookies.token) {
       invalidateToken(request.cookies.token);
     }
-    reply.clearCookie('token', { path: '/' });
+    reply.clearCookie('token', { path: '/', sameSite: 'none', secure: true });
     return reply.send({ message: 'Logged out successfully' });
   });
 }
