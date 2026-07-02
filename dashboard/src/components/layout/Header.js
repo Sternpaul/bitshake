@@ -39,6 +39,12 @@ export default function Header() {
 
   const isOnline = health?.status === 'ok';
   const mqttConnected = health?.mqtt?.connected;
+  const lastReadingAt = health?.mqtt?.last_reading_at;
+  
+  // Consider the device active if we received a reading in the last 2 minutes
+  const deviceActive = lastReadingAt 
+    ? (new Date() - new Date(lastReadingAt)) < 120000 
+    : false;
 
   return (
     <header className="header">
@@ -49,6 +55,11 @@ export default function Header() {
           {mqttConnected !== undefined && (
             <span style={{ marginLeft: '12px', opacity: 0.7 }}>
               {mqttConnected ? '📡 MQTT Connected' : '📡 MQTT Offline'}
+            </span>
+          )}
+          {mqttConnected !== undefined && (
+            <span style={{ marginLeft: '12px', opacity: 0.7 }}>
+              {deviceActive ? '🔌 Device Active' : '🔌 Device Waiting...'}
             </span>
           )}
         </span>
