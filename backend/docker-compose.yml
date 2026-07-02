@@ -4,26 +4,18 @@
 # ============================================================
 
 services:
-  # ── Caddy Reverse Proxy (auto-SSL with Let's Encrypt) ────
-  caddy:
-    image: caddy:2-alpine
-    container_name: bitshake-caddy
+  # ── Cloudflare Tunnel ──────────────────────────────────────
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: bitshake-cloudflared
     restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:?CLOUDFLARE_TUNNEL_TOKEN is required}
     depends_on:
       - api
     networks:
-      - bitshake-net
-
-
-
-  # ── TimescaleDB (PostgreSQL with time-series extension) ──
+      - bitshake-net  # ── TimescaleDB (PostgreSQL with time-series extension) ──
   timescaledb:
     image: timescale/timescaledb:latest-pg16
     container_name: bitshake-timescaledb
@@ -79,8 +71,6 @@ services:
       - bitshake-net
 
 volumes:
-  caddy_data:
-  caddy_config:
   timescaledb_data:
 
 networks:

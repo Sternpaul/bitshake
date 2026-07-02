@@ -29,8 +29,6 @@ Open these ports in your VCN's security list:
 | Port | Protocol | Source | Purpose |
 |:-----|:---------|:-------|:--------|
 | 22 | TCP | Your IP | SSH access |
-| 80 | TCP | 0.0.0.0/0 | HTTP (Caddy redirect) |
-| 443 | TCP | 0.0.0.0/0 | HTTPS (Caddy / API) |
 
 
 
@@ -40,21 +38,6 @@ Open these ports in your VCN's security list:
 2. Click **Add Ingress Rules**
 3. Add each port from the table above
 
-## Step 3: Configure the OS Firewall
-
-SSH into your instance and open the required ports:
-
-```bash
-# Oracle Linux 9
-sudo firewall-cmd --permanent --add-port=80/tcp
-sudo firewall-cmd --permanent --add-port=443/tcp
-sudo firewall-cmd --reload
-
-# Ubuntu 22.04
-sudo iptables -I INPUT -p tcp --dport 80 -j ACCEPT
-sudo iptables -I INPUT -p tcp --dport 443 -j ACCEPT
-sudo netfilter-persistent save
-```
 
 ## Step 4: Install Docker
 
@@ -129,46 +112,24 @@ Instead of running a local MQTT broker and exposing it to the internet, we use a
    - `MQTT_USER=<your-hivemq-username>`
    - `MQTT_PASSWORD=<your-hivemq-password>`
 
-## Step 8: Configure DNS
+## Step 8: Configure Cloudflare Tunnel
 
-Add an A record for your domain:
+Instead of opening ports and managing SSL certificates manually, we use Cloudflare Tunnels.
 
-| Type | Name | Value | TTL |
-|:-----|:-----|:------|:----|
-| A | `api` | `<Oracle Cloud Public IP>` | 300 |
-
-This creates `api.yourdomain.com` pointing to your server.
-
-> Wait a few minutes for DNS propagation before proceeding.
-
-## Step 9: Update the Caddyfile
-
-```bash
-# Edit the Caddyfile with your actual domain
-nano caddy/Caddyfile
-```
-
-Replace `{$DOMAIN:api.yourdomain.com}` with your actual domain:
-
-```
-api.yourdomain.com {
-    reverse_proxy api:3001
-    
-    header {
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "DENY"
-        Referrer-Policy "strict-origin-when-cross-origin"
-        -Server
-    }
-
-    log {
-        output stdout
-        format json
-    }
-}
-```
-
-## Step 10: Start the Stack
+1. Go to your [Cloudflare Zero Trust Dashboard](https://one.dash.cloudflare.com).
+2. Navigate to **Networks > Tunnels**.
+3. Click **Create a tunnel** -> Select **Cloudflared** -> Name it (e.g., `bitshake-api`).
+4. On the "Install and run a connector" page, you will see a command like:
+   `cloudflared.exe service install eyJh...`
+5. Copy **only the token string** (the long string of random characters starting with `ey`).
+6. Paste this token into your `.env` file as `CLOUDFLARE_TUNNEL_TOKEN=eyJh...`
+7. Click Next. For the **Public Hostname**:
+   - Subdomain: `api`
+   - Domain: `yourdomain.com`
+   - Service Type: `HTTP`
+   - Service URL: `api:3001`
+8. Click **Save Tunnel**.
+## Step 9: Start the Stack
 
 ```bash
 # Build and start all services

@@ -116,17 +116,17 @@ cp .env.example .env
 nano .env  # Fill in all values — see comments in the file
 
 
-# Update Caddyfile with your domain
-nano caddy/Caddyfile
-
 # Start everything
 docker compose up -d --build
 
 # Create the admin user
 docker exec bitshake-api node src/setup-user.js
 
-# Verify
-curl https://api.yourdomain.com/api/health
+# Verify the backend is running
+curl http://localhost:3001/api/health
+
+# Verify your Cloudflare Tunnel is connected
+docker compose logs cloudflared
 ```
 
 ### 2. Configure the Bitshake Device
@@ -136,7 +136,7 @@ See [docs/tasmota-setup.md](docs/tasmota-setup.md) for detailed step-by-step ins
 **Quick version:**
 1. Access Tasmota web UI at `http://<bitshake-ip>`
 2. Add the SML script (see docs)
-3. Configure MQTT to point to your Oracle Cloud IP
+3. Configure MQTT to point to your HiveMQ Broker URL
 4. Set `TelePeriod 10` in the console
 
 ### 3. Deploy the Dashboard (Vercel)
