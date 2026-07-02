@@ -116,9 +116,11 @@ cp .env.example .env
 nano .env  # Fill in all values — see comments in the file
 
 # Generate Mosquitto password file
-docker run -it --rm -v $(pwd)/mosquitto:/mosquitto/config \
-  eclipse-mosquitto:2 mosquitto_passwd -c /mosquitto/config/passwd bitshake
-# Enter the SAME password as MQTT_PASSWORD in .env
+mkdir -p mosquitto
+touch mosquitto/passwd
+docker run --rm -v $(pwd)/mosquitto:/mosquitto/config \
+  eclipse-mosquitto:2 mosquitto_passwd -b -c /mosquitto/config/passwd bitshake <YOUR_PASSWORD_HERE>
+sudo chmod 644 mosquitto/passwd
 
 # Update Caddyfile with your domain
 nano caddy/Caddyfile

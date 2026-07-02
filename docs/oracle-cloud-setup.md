@@ -124,10 +124,13 @@ DOMAIN=api.yourdomain.com
 
 ```bash
 # Generate the Mosquitto password file
-docker run -it --rm -v $(pwd)/mosquitto:/mosquitto/config \
-  eclipse-mosquitto:2 mosquitto_passwd -c /mosquitto/config/passwd bitshake
+mkdir -p mosquitto
+touch mosquitto/passwd
+docker run --rm -v $(pwd)/mosquitto:/mosquitto/config \
+  eclipse-mosquitto:2 mosquitto_passwd -b -c /mosquitto/config/passwd bitshake <YOUR_PASSWORD_HERE>
 
-# Enter the SAME password as MQTT_PASSWORD in .env when prompted
+# Fix permissions so the Mosquitto container can read it
+sudo chmod 644 mosquitto/passwd
 ```
 
 ## Step 8: Configure DNS
