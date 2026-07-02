@@ -56,10 +56,10 @@ function AnalyticsContent() {
   }, [router, fetchData]);
 
   const ranges = [
-    { key: '24h', label: '24 Hours' },
-    { key: '7d', label: '7 Days' },
-    { key: '30d', label: '30 Days' },
-    { key: '1y', label: '1 Year' },
+    { key: '24h', label: '24 Stunden' },
+    { key: '7d', label: '7 Tage' },
+    { key: '30d', label: '30 Tage' },
+    { key: '1y', label: '1 Jahr' },
   ];
 
   const formatDate = (bucket) => {
@@ -93,8 +93,8 @@ function AnalyticsContent() {
 
       <main className="main-content">
         <div className="page-header">
-          <h1 className="page-title">Analytics</h1>
-          <p className="page-subtitle">Detailed energy analysis and historical data</p>
+          <h1 className="page-title">Analysen</h1>
+          <p className="page-subtitle">Detaillierte Energieanalyse und historische Daten</p>
         </div>
 
         {/* Range Selector */}
@@ -115,31 +115,31 @@ function AnalyticsContent() {
         {/* Summary KPIs for selected range */}
         <div className="kpi-grid" style={{ marginBottom: 'var(--space-8)' }}>
           <div className="kpi-card consumption">
-            <div className="kpi-label"><span>📊</span> Total Consumed</div>
+            <div className="kpi-label"><span>📊</span> Gesamtverbrauch</div>
             <div className="kpi-value consuming">{totalConsumed.toFixed(1)}<span className="kpi-unit">kWh</span></div>
-            <div className="kpi-detail">Cost: {(totalConsumed * price).toFixed(2)} €</div>
+            <div className="kpi-detail">Kosten: {(totalConsumed * price).toFixed(2)} €</div>
           </div>
           <div className="kpi-card solar">
-            <div className="kpi-label"><span>☀️</span> Total Exported</div>
+            <div className="kpi-label"><span>☀️</span> Gesamteinspeisung</div>
             <div className="kpi-value feeding">{totalExported.toFixed(1)}<span className="kpi-unit">kWh</span></div>
-            <div className="kpi-detail">Earnings: {(totalExported * tariff).toFixed(2)} €</div>
+            <div className="kpi-detail">Ersparnis: {(totalExported * tariff).toFixed(2)} €</div>
           </div>
           <div className="kpi-card">
-            <div className="kpi-label"><span>⚡</span> Average Power</div>
+            <div className="kpi-label"><span>⚡</span> Durchschn. Leistung</div>
             <div className="kpi-value">{Math.round(avgPower)}<span className="kpi-unit">W</span></div>
-            <div className="kpi-detail">Peak: {Math.round(peakPower)} W</div>
+            <div className="kpi-detail">Spitze: {Math.round(peakPower)} W</div>
           </div>
           <div className="kpi-card success">
-            <div className="kpi-label"><span>💰</span> Net Cost</div>
+            <div className="kpi-label"><span>💰</span> Netto Kosten</div>
             <div className="kpi-value">{((totalConsumed * price) - (totalExported * tariff)).toFixed(2)}<span className="kpi-unit">€</span></div>
-            <div className="kpi-detail">Consumption cost minus feed-in earnings</div>
+            <div className="kpi-detail">Bezugskosten minus Einspeisevergütung</div>
           </div>
         </div>
 
         {/* Energy Balance Chart */}
         <div className="chart-card full-width" style={{ marginBottom: 'var(--space-6)' }}>
-          <div className="chart-title">Energy Balance</div>
-          <div className="chart-subtitle">Consumption vs Solar Export — {ranges.find(r => r.key === range)?.label}</div>
+          <div className="chart-title">Energiebilanz</div>
+          <div className="chart-subtitle">Bezug vs Einspeisung — {ranges.find(r => r.key === range)?.label}</div>
           <div className="chart-wrapper tall">
             {loading ? (
               <div className="skeleton" style={{ width: '100%', height: '100%' }} />
@@ -151,8 +151,8 @@ function AnalyticsContent() {
                   <YAxis stroke="rgba(255,255,255,0.2)" tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} tickFormatter={v => `${v} kWh`} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend wrapperStyle={{ fontSize: '12px' }} />
-                  <Bar dataKey="consumed" name="Consumed" fill="hsl(210, 100%, 60%)" radius={[4, 4, 0, 0]} maxBarSize={50} />
-                  <Bar dataKey="exported" name="Exported" fill="hsl(38, 92%, 55%)" radius={[4, 4, 0, 0]} maxBarSize={50} />
+                  <Bar dataKey="consumed" name="Bezug" fill="hsl(210, 100%, 60%)" radius={[4, 4, 0, 0]} maxBarSize={50} />
+                  <Bar dataKey="exported" name="Einspeisung" fill="hsl(38, 92%, 55%)" radius={[4, 4, 0, 0]} maxBarSize={50} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -161,8 +161,8 @@ function AnalyticsContent() {
 
         {/* Power Trend Chart */}
         <div className="chart-card full-width">
-          <div className="chart-title">Power Trend</div>
-          <div className="chart-subtitle">Average and peak power — {ranges.find(r => r.key === range)?.label}</div>
+          <div className="chart-title">Leistungstrend</div>
+          <div className="chart-subtitle">Durchschnittliche und Spitzenleistung — {ranges.find(r => r.key === range)?.label}</div>
           <div className="chart-wrapper tall">
             {loading ? (
               <div className="skeleton" style={{ width: '100%', height: '100%' }} />
@@ -180,8 +180,8 @@ function AnalyticsContent() {
                   <YAxis stroke="rgba(255,255,255,0.2)" tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} tickFormatter={v => `${v}W`} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend wrapperStyle={{ fontSize: '12px' }} />
-                  <Area type="monotone" dataKey="avg_power" name="Avg Power" stroke="hsl(210, 100%, 60%)" fill="url(#avgPowerGrad)" strokeWidth={2} dot={false} />
-                  <Area type="monotone" dataKey="max_power" name="Peak Power" stroke="hsl(0, 80%, 60%)" fill="transparent" strokeWidth={1.5} strokeDasharray="4 4" dot={false} />
+                  <Area type="monotone" dataKey="avg_power" name="Durchschnitt" stroke="hsl(210, 100%, 60%)" fill="url(#avgPowerGrad)" strokeWidth={2} dot={false} />
+                  <Area type="monotone" dataKey="max_power" name="Spitze" stroke="hsl(0, 80%, 60%)" fill="transparent" strokeWidth={1.5} strokeDasharray="4 4" dot={false} />
                 </AreaChart>
               </ResponsiveContainer>
             )}

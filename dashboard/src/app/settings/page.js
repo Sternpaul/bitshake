@@ -130,17 +130,17 @@ function SettingsContent() {
 
       <main className="main-content">
         <div className="page-header">
-          <h1 className="page-title">Settings</h1>
-          <p className="page-subtitle">Configure your energy tariffs, dashboard preferences, and account</p>
+          <h1 className="page-title">Einstellungen</h1>
+          <p className="page-subtitle">Konfigurieren Sie Ihre Energietarife, Dashboard-Einstellungen und Ihr Konto</p>
         </div>
 
         <div className="settings-grid">
           {/* Tariff Settings */}
           <div className="settings-card">
-            <div className="settings-card-title">💰 Energy Tariffs</div>
+            <div className="settings-card-title">💰 Energietarife</div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="settings-price">Electricity Price</label>
+              <label className="form-label" htmlFor="settings-price">Strompreis</label>
               <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
                 <input
                   id="settings-price"
@@ -155,11 +155,11 @@ function SettingsContent() {
                 />
                 <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>€/kWh</span>
               </div>
-              <div className="form-hint">Current price you pay per kWh imported from the grid</div>
+              <div className="form-hint">Aktueller Preis pro bezogener kWh aus dem Netz</div>
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="settings-tariff">Feed-in Tariff (Einspeisevergütung)</label>
+              <label className="form-label" htmlFor="settings-tariff">Einspeisevergütung</label>
               <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
                 <input
                   id="settings-tariff"
@@ -174,11 +174,11 @@ function SettingsContent() {
                 />
                 <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>€/kWh</span>
               </div>
-              <div className="form-hint">Amount you receive per kWh exported to the grid. Set to 0 if none.</div>
+              <div className="form-hint">Betrag, den Sie pro ins Netz eingespeister kWh erhalten. Auf 0 setzen, falls nicht vorhanden.</div>
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="settings-currency">Currency</label>
+              <label className="form-label" htmlFor="settings-currency">Währung</label>
               <select
                 id="settings-currency"
                 className="form-select"
@@ -198,18 +198,18 @@ function SettingsContent() {
                 onClick={handleSaveSettings}
                 disabled={saving}
               >
-                {saving ? '⏳ Saving...' : '💾 Save Settings'}
+                {saving ? '⏳ Speichere...' : '💾 Einstellungen speichern'}
               </button>
-              {saved && <span className="settings-saved">✅ Saved!</span>}
+              {saved && <span className="settings-saved">✅ Gespeichert!</span>}
             </div>
           </div>
 
           {/* Dashboard Settings */}
           <div className="settings-card">
-            <div className="settings-card-title">⚙️ Dashboard Preferences</div>
+            <div className="settings-card-title">⚙️ Dashboard-Einstellungen</div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="settings-refresh">Auto-Refresh Interval</label>
+              <label className="form-label" htmlFor="settings-refresh">Auto-Refresh Intervall</label>
               <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
                 <input
                   id="settings-refresh"
@@ -223,14 +223,14 @@ function SettingsContent() {
                 />
                 <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>seconds</span>
               </div>
-              <div className="form-hint">How often the dashboard refreshes data (5–300 seconds)</div>
+              <div className="form-hint">Wie oft das Dashboard Daten aktualisiert (5–300 Sekunden)</div>
             </div>
 
             <div style={{ marginTop: 'var(--space-8)' }}>
-              <div className="settings-card-title" style={{ fontSize: '1rem' }}>📦 Export Data</div>
+              <div className="settings-card-title" style={{ fontSize: '1rem' }}>📦 Daten exportieren</div>
               <div style={{ display: 'flex', gap: 'var(--space-4)', alignItems: 'flex-end', flexWrap: 'wrap' }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label" htmlFor="export-from">From</label>
+                  <label className="form-label" htmlFor="export-from">Von</label>
                   <input
                     id="export-from"
                     className="form-input"
@@ -240,7 +240,7 @@ function SettingsContent() {
                   />
                 </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label" htmlFor="export-to">To</label>
+                  <label className="form-label" htmlFor="export-to">Bis</label>
                   <input
                     id="export-to"
                     className="form-input"
@@ -254,18 +254,18 @@ function SettingsContent() {
                   onClick={handleExport}
                   disabled={exporting}
                 >
-                  {exporting ? '⏳ Exporting...' : '📥 Download CSV'}
+                  {exporting ? '⏳ Exportiere...' : '📥 CSV herunterladen'}
                 </button>
               </div>
               <div className="form-hint" style={{ marginTop: 'var(--space-2)' }}>
-                Export raw meter readings as CSV for the selected date range
+                Exportieren Sie Rohdaten als CSV für den ausgewählten Zeitraum
               </div>
             </div>
           </div>
 
           {/* Password Change */}
           <div className="settings-card">
-            <div className="settings-card-title">🔐 Change Password</div>
+            <div className="settings-card-title">🔐 Passwort ändern</div>
 
             {passwordError && <div className="login-error" style={{ marginBottom: 'var(--space-4)' }}>{passwordError}</div>}
             {passwordSuccess && (
@@ -284,7 +284,7 @@ function SettingsContent() {
 
             <form onSubmit={handleChangePassword}>
               <div className="form-group">
-                <label className="form-label" htmlFor="current-password">Current Password</label>
+                <label className="form-label" htmlFor="current-password">Aktuelles Passwort</label>
                 <input
                   id="current-password"
                   className="form-input"
@@ -296,7 +296,7 @@ function SettingsContent() {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label" htmlFor="new-password">New Password</label>
+                <label className="form-label" htmlFor="new-password">Neues Passwort</label>
                 <input
                   id="new-password"
                   className="form-input"
@@ -307,10 +307,10 @@ function SettingsContent() {
                   minLength={8}
                   autoComplete="new-password"
                 />
-                <div className="form-hint">Minimum 8 characters</div>
+                <div className="form-hint">Mindestens 8 Zeichen</div>
               </div>
               <div className="form-group">
-                <label className="form-label" htmlFor="confirm-password">Confirm New Password</label>
+                <label className="form-label" htmlFor="confirm-password">Neues Passwort bestätigen</label>
                 <input
                   id="confirm-password"
                   className="form-input"
@@ -327,7 +327,7 @@ function SettingsContent() {
                 className="btn btn-secondary"
                 disabled={changingPassword}
               >
-                {changingPassword ? '⏳ Changing...' : '🔑 Change Password'}
+                {changingPassword ? '⏳ Ändere...' : '🔑 Passwort ändern'}
               </button>
             </form>
           </div>
