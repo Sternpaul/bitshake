@@ -25,8 +25,8 @@ Electricity Meter ──(IR)──> Bitshake Air (Tasmota)
                               │ MQTT Subscription
                               ▼
                     ┌─────────────────────┐
-                    │   Oracle Cloud VM    │
-                    │   (Docker Compose)   │
+                    │   Oracle Cloud VM   │
+                    │   (Docker Compose)  │
                     │                     │
                     │ ┌─────────────────┐ │
                     │ │  Fastify API    │ │ ← REST API
