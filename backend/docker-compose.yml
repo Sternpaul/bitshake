@@ -6,7 +6,7 @@
 services:
   # ── Cloudflare Tunnel ──────────────────────────────────────
   cloudflared:
-    image: cloudflare/cloudflared:latest
+    image: cloudflare/cloudflared:2026.6.1
     container_name: bitshake-cloudflared
     restart: unless-stopped
     command: tunnel run

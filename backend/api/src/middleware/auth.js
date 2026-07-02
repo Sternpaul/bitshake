@@ -1,5 +1,8 @@
 import jwt from 'jsonwebtoken';
 
+// In-memory blacklist for invalidated tokens
+const tokenBlacklist = new Set();
+
 const JWT_SECRET = process.env.JWT_SECRET || 'change-me-in-production';
 
 /**
@@ -23,6 +26,13 @@ export async function verifyToken(request, reply) {
     });
   }
 
+  if (tokenBlacklist.has(token)) {
+    return reply.code(401).send({
+      error: 'Unauthorized',
+      message: 'Token has been invalidated',
+    });
+  }
+
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     request.user = decoded;
@@ -41,4 +51,18 @@ export async function verifyToken(request, reply) {
  */
 export function generateToken(payload) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
+}
+
+/**
+ * Add a token to the blacklist
+ * @param {string} token 
+ */
+export function invalidateToken(token) {
+  if (token) {
+    tokenBlacklist.add(token);
+    
+    // Periodically clean up the set to prevent memory leaks? 
+    // In a production environment with Redis, we'd set an expiry. 
+    // Here we'll just let it grow slightly since it's low traffic.
+  }
 }

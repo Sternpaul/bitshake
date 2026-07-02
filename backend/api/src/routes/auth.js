@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import { query } from '../db.js';
-import { generateToken } from '../middleware/auth.js';
+import { generateToken, invalidateToken } from '../middleware/auth.js';
 
 /**
  * Register auth routes.
@@ -143,6 +143,9 @@ export default async function authRoutes(fastify) {
 
   // POST /api/auth/logout — Clear cookie
   fastify.post('/api/auth/logout', async (request, reply) => {
+    if (request.cookies.token) {
+      invalidateToken(request.cookies.token);
+    }
     reply.clearCookie('token', { path: '/' });
     return reply.send({ message: 'Logged out successfully' });
   });
