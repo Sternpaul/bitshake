@@ -34,6 +34,7 @@ export default async function settingsRoutes(fastify) {
         additionalProperties: false,
         properties: {
           electricity_price: { type: 'string', pattern: '^\\d+(\\.\\d+)?$' },
+          enable_feedin_tariff: { type: 'string', enum: ['true', 'false'] },
           feedin_tariff: { type: 'string', pattern: '^\\d+(\\.\\d+)?$' },
           currency: { type: 'string', enum: ['EUR', 'USD', 'GBP', 'CHF'] },
           dashboard_refresh_seconds: { type: 'string', pattern: '^\\d+$' },
@@ -42,7 +43,7 @@ export default async function settingsRoutes(fastify) {
     },
   }, async (request, reply) => {
     const updates = request.body;
-    const allowedKeys = ['electricity_price', 'feedin_tariff', 'currency', 'dashboard_refresh_seconds'];
+    const allowedKeys = ['electricity_price', 'enable_feedin_tariff', 'feedin_tariff', 'currency', 'dashboard_refresh_seconds'];
 
     try {
       const results = {};

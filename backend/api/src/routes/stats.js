@@ -13,7 +13,7 @@ export default async function statsRoutes(fastify) {
     try {
       // Fetch settings for cost calculations
       const settingsResult = await query(
-        `SELECT key, value FROM settings WHERE key IN ('electricity_price', 'feedin_tariff', 'currency')`
+        `SELECT key, value FROM settings WHERE key IN ('electricity_price', 'feedin_tariff', 'currency', 'enable_feedin_tariff')`
       );
       const settings = {};
       settingsResult.rows.forEach(r => { settings[r.key] = r.value; });
@@ -21,6 +21,7 @@ export default async function statsRoutes(fastify) {
       const electricityPrice = parseFloat(settings.electricity_price || '0.35');
       const feedinTariff = parseFloat(settings.feedin_tariff || '0.00');
       const currency = settings.currency || 'EUR';
+      const enableFeedinTariff = settings.enable_feedin_tariff === 'true';
 
       // Latest reading
       const latestResult = await query(
@@ -68,15 +69,10 @@ export default async function statsRoutes(fastify) {
       const consumedToday = parseFloat(today.consumed_today || 0);
       const exportedToday = parseFloat(today.exported_today || 0);
 
-      // Self-consumption rate:
-      // If no solar export, it's 100% (all generation used internally)
-      // Formula: 1 - (exported / total_generated)
-      // Since we don't know total generation directly, we use:
-      // self_consumption = consumed / (consumed + exported) when both are > 0
-      let selfConsumptionRate = 0;
-      if (consumedToday + exportedToday > 0) {
-        selfConsumptionRate = consumedToday / (consumedToday + exportedToday);
-      }
+      // Net Grid Balance (Netzbilanz)
+      // Positive = Net Producer (Export > Import)
+      // Negative = Net Consumer (Import > Export)
+      const netBalanceKwh = exportedToday - consumedToday;
 
       return reply.send({
         current: latest ? {
@@ -94,7 +90,7 @@ export default async function statsRoutes(fastify) {
           avg_power: parseFloat(today.avg_power_today || 0),
           peak_power: parseFloat(today.peak_power_today || 0),
           min_power: parseFloat(today.min_power_today || 0),
-          self_consumption_rate: selfConsumptionRate,
+          net_balance_kwh: netBalanceKwh,
           cost: consumedToday * electricityPrice,
           earnings: exportedToday * feedinTariff,
           readings_count: parseInt(today.readings_today || 0),
@@ -114,6 +110,7 @@ export default async function statsRoutes(fastify) {
         settings: {
           electricity_price: electricityPrice,
           feedin_tariff: feedinTariff,
+          enable_feedin_tariff: enableFeedinTariff,
           currency,
         },
       });

@@ -16,6 +16,7 @@ function SettingsContent() {
 
   // Settings state
   const [electricityPrice, setElectricityPrice] = useState('0.35');
+  const [enableFeedinTariff, setEnableFeedinTariff] = useState(false);
   const [feedinTariff, setFeedinTariff] = useState('0.00');
   const [currency, setCurrency] = useState('EUR');
   const [refreshInterval, setRefreshInterval] = useState('10');
@@ -54,6 +55,7 @@ function SettingsContent() {
         const result = await api.getSettings();
         const s = result.data;
         if (s.electricity_price) setElectricityPrice(s.electricity_price.value);
+        if (s.enable_feedin_tariff) setEnableFeedinTariff(s.enable_feedin_tariff.value === 'true');
         if (s.feedin_tariff) setFeedinTariff(s.feedin_tariff.value);
         if (s.currency) setCurrency(s.currency.value);
         if (s.dashboard_refresh_seconds) setRefreshInterval(s.dashboard_refresh_seconds.value);
@@ -86,6 +88,7 @@ function SettingsContent() {
     try {
       await api.updateSettings({
         electricity_price: electricityPrice,
+        enable_feedin_tariff: enableFeedinTariff ? 'true' : 'false',
         feedin_tariff: feedinTariff,
         currency,
         dashboard_refresh_seconds: refreshInterval,
@@ -176,23 +179,38 @@ function SettingsContent() {
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="settings-tariff">Einspeisevergütung</label>
-              <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer' }}>
                 <input
-                  id="settings-tariff"
-                  className="form-input"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="10"
-                  value={feedinTariff}
-                  onChange={(e) => setFeedinTariff(e.target.value)}
-                  style={{ flex: 1 }}
+                  type="checkbox"
+                  checked={enableFeedinTariff}
+                  onChange={(e) => setEnableFeedinTariff(e.target.checked)}
+                  style={{ width: '1.2rem', height: '1.2rem', accentColor: 'var(--primary)' }}
                 />
-                <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>€/kWh</span>
-              </div>
-              <div className="form-hint">Betrag, den Sie pro ins Netz eingespeister kWh erhalten. Auf 0 setzen, falls nicht vorhanden.</div>
+                Einspeisevergütung aktivieren
+              </label>
+              <div className="form-hint" style={{ marginTop: 'var(--space-1)' }}>Aktivieren, wenn Sie eine Vergütung für eingespeisten Solarstrom erhalten.</div>
             </div>
+
+            {enableFeedinTariff && (
+              <div className="form-group" style={{ paddingLeft: 'var(--space-6)', borderLeft: '2px solid var(--border)' }}>
+                <label className="form-label" htmlFor="settings-tariff">Vergütung pro kWh</label>
+                <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+                  <input
+                    id="settings-tariff"
+                    className="form-input"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="10"
+                    value={feedinTariff}
+                    onChange={(e) => setFeedinTariff(e.target.value)}
+                    style={{ flex: 1 }}
+                  />
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>€/kWh</span>
+                </div>
+                <div className="form-hint">Betrag, den Sie pro ins Netz eingespeister kWh erhalten.</div>
+              </div>
+            )}
 
             <div className="form-group">
               <label className="form-label" htmlFor="settings-currency">Währung</label>

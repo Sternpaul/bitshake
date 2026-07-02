@@ -121,12 +121,12 @@ function DashboardContent() {
             loading={loading}
           />
           <KPICard
-            icon="🔋"
-            label="Eigenverbrauch"
-            value={today ? `${Math.round((today.self_consumption_rate || 0) * 100)}` : '—'}
-            unit="%"
-            variant="success"
-            detail="Genutzte Energie vs. Gesamt"
+            icon="⚖️"
+            label="Heutige Netzbilanz"
+            value={today?.net_balance_kwh > 0 ? `+${formatNumber(today.net_balance_kwh)}` : formatNumber(today?.net_balance_kwh)}
+            unit="kWh"
+            variant={today?.net_balance_kwh > 0 ? 'solar' : 'consumption'}
+            detail={today?.net_balance_kwh > 0 ? 'Netto-Einspeiser' : 'Netto-Bezieher'}
             loading={loading}
           />
           <KPICard
@@ -137,14 +137,16 @@ function DashboardContent() {
             detail={`@ ${formatNumber(settings?.electricity_price, 2)} €/kWh`}
             loading={loading}
           />
-          <KPICard
-            icon="💵"
-            label="Heutige Ersparnis"
-            value={formatCurrency(today?.earnings, settings?.currency)}
-            variant="solar"
-            detail={settings?.feedin_tariff > 0 ? `@ ${formatNumber(settings?.feedin_tariff, 2)} €/kWh` : 'Keine Einspeisevergütung'}
-            loading={loading}
-          />
+          {settings?.enable_feedin_tariff === 'true' && (
+            <KPICard
+              icon="💵"
+              label="Heutige Ersparnis"
+              value={formatCurrency(today?.earnings, settings?.currency)}
+              variant="solar"
+              detail={`@ ${formatNumber(settings?.feedin_tariff, 2)} €/kWh`}
+              loading={loading}
+            />
+          )}
         </div>
 
         {/* Charts */}
