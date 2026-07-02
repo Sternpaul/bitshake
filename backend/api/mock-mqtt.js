@@ -1,4 +1,6 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+dotenv.config({ path: '../.env' });
+dotenv.config(); // fallback to current dir
 import mqtt from 'mqtt';
 
 const MQTT_HOST = process.env.MQTT_HOST || 'mqtt://localhost:1883';
