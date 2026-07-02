@@ -124,7 +124,7 @@ DOMAIN=api.yourdomain.com
 
 ```bash
 # Generate the Mosquitto password file
-docker run --rm -v $(pwd)/mosquitto:/mosquitto/config \
+docker run -it --rm -v $(pwd)/mosquitto:/mosquitto/config \
   eclipse-mosquitto:2 mosquitto_passwd -c /mosquitto/config/passwd bitshake
 
 # Enter the SAME password as MQTT_PASSWORD in .env when prompted
