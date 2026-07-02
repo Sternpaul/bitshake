@@ -6,7 +6,7 @@ A comprehensive, real-time energy monitoring dashboard for the **Bitshake Smart 
 ![Stack](https://img.shields.io/badge/Fastify-5-white?logo=fastify)
 ![Stack](https://img.shields.io/badge/TimescaleDB-PostgreSQL-blue?logo=postgresql)
 ![Stack](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)
-![Stack](https://img.shields.io/badge/MQTT-Mosquitto-purple?logo=eclipse-mosquitto)
+![Stack](https://img.shields.io/badge/MQTT-HiveMQ-purple?logo=hivemq)
 
 ---
 
@@ -21,9 +21,10 @@ Electricity Meter ──(IR)──> Bitshake Air (Tasmota)
                     │   Oracle Cloud VM    │
                     │   (Docker Compose)   │
                     │                     │
+                    │                     │
                     │ ┌─────────────────┐ │
-                    │ │   Mosquitto     │ │ ← Port 1883 (MQTT)
-                    │ │   MQTT Broker   │ │
+                    │ │   HiveMQ        │ │ ← External MQTT Broker
+                    │ │   Serverless    │ │
                     │ └────────┬────────┘ │
                     │          │          │
                     │ ┌────────▼────────┐ │
@@ -75,7 +76,7 @@ Electricity Meter ──(IR)──> Bitshake Air (Tasmota)
 
 ### Security
 - JWT-based authentication (24h expiry)
-- MQTT broker with username/password auth
+- MQTT broker (HiveMQ Serverless) with TLS and username/password auth
 - Database isolated in Docker network (not exposed)
 - HTTPS via Caddy auto-SSL (Let's Encrypt)
 - OCI Security Lists for port-level firewall
@@ -166,12 +167,9 @@ Caddy will automatically obtain a Let's Encrypt SSL certificate.
 ```
 bitshake/
 ├── backend/                        # Oracle Cloud (Dockerized)
-│   ├── docker-compose.yml          # 4-container stack
+│   ├── docker-compose.yml          # 3-container stack
 │   ├── .env.example                # Environment template
 │   ├── caddy/Caddyfile             # Reverse proxy config
-│   ├── mosquitto/
-│   │   ├── mosquitto.conf          # MQTT broker config
-│   │   └── passwd.example          # Password template
 │   ├── db/init.sql                 # Database schema
 │   └── api/
 │       ├── Dockerfile
@@ -247,7 +245,7 @@ bitshake/
 | Variable | Required | Default | Description |
 |:---------|:---------|:--------|:------------|
 | `DB_PASSWORD` | ✅ | — | PostgreSQL password |
-| `MQTT_PASSWORD` | ✅ | — | Mosquitto password |
+| `MQTT_PASSWORD` | ✅ | — | HiveMQ password |
 | `JWT_SECRET` | ✅ | — | JWT signing secret (64+ chars) |
 | `CORS_ORIGIN` | ✅ | `*` | Dashboard URL for CORS |
 | `ADMIN_USERNAME` | — | `admin` | Dashboard login username |
