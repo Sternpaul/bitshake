@@ -84,6 +84,7 @@ function AnalyticsContent() {
 
   const price = overview?.settings?.electricity_price || 0.35;
   const tariff = overview?.settings?.feedin_tariff || 0;
+  const enableFeedin = overview?.settings?.enable_feedin_tariff === 'true';
 
   return (
     <div className="app-layout">
@@ -122,7 +123,7 @@ function AnalyticsContent() {
           <div className="kpi-card solar">
             <div className="kpi-label"><span>☀️</span> Gesamteinspeisung</div>
             <div className="kpi-value feeding">{totalExported.toFixed(1)}<span className="kpi-unit">kWh</span></div>
-            <div className="kpi-detail">Ersparnis: {(totalExported * tariff).toFixed(2)} €</div>
+            {enableFeedin && <div className="kpi-detail">Ersparnis: {(totalExported * tariff).toFixed(2)} €</div>}
           </div>
           <div className="kpi-card">
             <div className="kpi-label"><span>⚡</span> Durchschn. Leistung</div>
@@ -130,9 +131,9 @@ function AnalyticsContent() {
             <div className="kpi-detail">Spitze: {Math.round(peakPower)} W</div>
           </div>
           <div className="kpi-card success">
-            <div className="kpi-label"><span>💰</span> Netto Kosten</div>
-            <div className="kpi-value">{((totalConsumed * price) - (totalExported * tariff)).toFixed(2)}<span className="kpi-unit">€</span></div>
-            <div className="kpi-detail">Bezugskosten minus Einspeisevergütung</div>
+            <div className="kpi-label"><span>💰</span> {enableFeedin ? 'Netto Kosten' : 'Stromkosten'}</div>
+            <div className="kpi-value">{enableFeedin ? ((totalConsumed * price) - (totalExported * tariff)).toFixed(2) : (totalConsumed * price).toFixed(2)}<span className="kpi-unit">€</span></div>
+            <div className="kpi-detail">{enableFeedin ? 'Bezugskosten minus Einspeisevergütung' : 'Kosten für reinen Netzbezug'}</div>
           </div>
         </div>
 
