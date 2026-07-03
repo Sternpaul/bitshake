@@ -198,7 +198,11 @@ function AnalyticsContent() {
         </div>
 
         {/* Hourly Profile Chart */}
-        <HourlyProfileChart data={profileData} loading={loading} />
+        <HourlyProfileChart 
+          data={profileData} 
+          loading={loading} 
+          rangeLabel={ranges.find(r => r.key === range)?.label} 
+        />
       </main>
     </div>
   );

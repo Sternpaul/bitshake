@@ -17,7 +17,7 @@ function CustomTooltip({ active, payload, label }) {
   );
 }
 
-export default function HourlyProfileChart({ data = [], loading }) {
+export default function HourlyProfileChart({ data = [], loading, rangeLabel = '' }) {
   if (loading) {
     return (
       <div className="chart-card full-width">
@@ -33,7 +33,7 @@ export default function HourlyProfileChart({ data = [], loading }) {
   return (
     <div className="chart-card full-width">
       <div className="chart-title">Verbrauchs- und Erzeugungsprofil</div>
-      <div className="chart-subtitle">Durchschnittliche Leistung (W) je Stunde über den ausgewählten Zeitraum</div>
+      <div className="chart-subtitle">Durchschnittliche Leistung je Stunde {rangeLabel ? `— ${rangeLabel}` : ''}</div>
       <div className="chart-wrapper tall">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
