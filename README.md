@@ -62,8 +62,11 @@ Electricity Meter ──(IR)──> Bitshake Air (Tasmota)
 
 ### Analytics
 - **Multi-range analysis** — 24 hours, 7 days, 30 days, 1 year
+- **Trend Indicators** — Dynamic color-coded badges showing percentage change vs. previous period
 - **Energy Balance** — Consumption vs. export bar chart
-- **Power Trend** — Average and peak power over time
+- **Hourly Profile (24h)** — Average daily consumption and export cycle curve
+- **Weekly Heatmap** — 7x24 grid visualizing power intensity by day of week and hour
+- **Projections & Insights** — Calculates Standby base load, yearly projected consumption/export, and yearly projected net cost
 - **Cost Calculations** — Net cost for any time range
 
 ### Settings
@@ -225,6 +228,9 @@ bitshake/
 | `GET` | `/api/readings/daily?date=YYYY-MM-DD` | JWT | Single day data |
 | `GET` | `/api/readings/export?from=&to=` | JWT | CSV download |
 | `GET` | `/api/stats/overview` | JWT | Dashboard KPIs |
+| `GET` | `/api/stats/hourly-profile?days=30` | JWT | Average 24h cycle |
+| `GET` | `/api/stats/compare?range=7d` | JWT | Trend vs previous period |
+| `GET` | `/api/stats/heatmap?days=30` | JWT | Weekly 7x24 matrix |
 | `GET` | `/api/settings` | JWT | Get settings |
 | `PUT` | `/api/settings` | JWT | Update settings |
 | `GET` | `/api/health` | — | Health check |
