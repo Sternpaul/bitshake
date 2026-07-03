@@ -70,6 +70,36 @@ services:
     networks:
       - bitshake-net
 
+  # ── Marstek MQTT Integration ────────────────────────────────
+  hame-relay:
+    image: ghcr.io/tomquist/hame-relay:latest
+    container_name: bitshake-hame-relay
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      HAME_USER: ${HAME_USER}
+      HAME_PASS: ${HAME_PASS}
+      MQTT_HOST: ${MQTT_HOST}
+      MQTT_USER: ${MQTT_USER}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
+    networks:
+      - bitshake-net
+
+  hm2mqtt:
+    image: ghcr.io/tomquist/hm2mqtt:latest
+    container_name: bitshake-hm2mqtt
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      MQTT_HOST: ${MQTT_HOST}
+      MQTT_USER: ${MQTT_USER}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
+      DEVICE_0: "HMI-1:${MARSTEK_MAC}"
+    networks:
+      - bitshake-net
+
 volumes:
   timescaledb_data:
 

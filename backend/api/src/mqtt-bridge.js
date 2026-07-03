@@ -4,7 +4,12 @@ import { query } from './db.js';
 const MQTT_HOST = process.env.MQTT_HOST || 'mqtt://mosquitto:1883';
 const MQTT_USER = process.env.MQTT_USER || '';
 const MQTT_PASSWORD = process.env.MQTT_PASSWORD || '';
-const MQTT_TOPIC = process.env.MQTT_TOPIC || 'tele/+/SENSOR';
+// We now support multiple topics: the original Tasmota topic AND the homeassistant/ topic used by hm2mqtt
+const MQTT_TOPICS = (process.env.MQTT_TOPIC || 'tele/+/SENSOR').split(',').map(t => t.trim());
+// Add the homeassistant wildcard topic so we receive hm2mqtt data
+if (!MQTT_TOPICS.includes('homeassistant/#')) {
+  MQTT_TOPICS.push('homeassistant/#');
+}
 
 let client = null;
 let lastReading = null;
@@ -32,12 +37,16 @@ export function startMqttBridge() {
 
   client.on('connect', () => {
     console.log(`[MQTT] Connected to ${MQTT_HOST}`);
-    client.subscribe(MQTT_TOPIC, { qos: 1 }, (err, granted) => {
-      if (err) {
-        console.error('[MQTT] Subscribe error:', err);
-      } else {
-        console.log(`[MQTT] Subscribed to: ${granted.map(g => g.topic).join(', ')}`);
-      }
+    
+    // Subscribe to all topics in our array
+    MQTT_TOPICS.forEach(topic => {
+      client.subscribe(topic, { qos: 1 }, (err, granted) => {
+        if (err) {
+          console.error(`[MQTT] Failed to subscribe to ${topic}:`, err);
+        } else {
+          console.log(`[MQTT] Subscribed to: ${granted.map(g => g.topic).join(', ')}`);
+        }
+      });
     });
   });
 
@@ -83,6 +92,37 @@ export function startMqttBridge() {
  * }
  */
 async function processReading(payload, topic) {
+  // --- hm2mqtt / Marstek Integration ---
+  // hm2mqtt publishes values individually to topics like:
+  // homeassistant/sensor/HMI-1_009b0805d1da_active_power/state
+  if (topic.startsWith('homeassistant/')) {
+    // Determine if this is a power reading from our microinverter
+    if (topic.includes('active_power') || topic.includes('total_power')) {
+      // The payload is often just a raw number, or a JSON object with a value
+      let powerVal = null;
+      if (typeof payload === 'number') {
+        powerVal = payload;
+      } else if (typeof payload === 'string' && !isNaN(parseFloat(payload))) {
+        powerVal = parseFloat(payload);
+      } else if (payload && payload.value !== undefined) {
+        powerVal = parseFloat(payload.value);
+      }
+      
+      if (powerVal !== null) {
+        console.log(`[MQTT] Received Marstek Solar Data: ${powerVal}W from ${topic}`);
+        // Here we could insert into TimescaleDB, but currently our meter_readings table expects
+        // grid import/export AND power. We might want to just update the solar generation table
+        // or a dedicated solar column. Since our schema only has power_current (which is grid),
+        // we should create a new column or just log it for now to see what the exact topic/payload is.
+        // For now, just log the raw values to ensure we are receiving them correctly on Oracle Cloud.
+        lastRawPayload = { marstekTopic: topic, marstekValue: powerVal };
+        return;
+      }
+    }
+    return;
+  }
+
+  // --- Tasmota / Logarex Integration ---
   // Tasmota wraps sensor data in a key — find the SML data
   // It could be under "SML", or the Tasmota topic name
   const sml = payload.SML || payload.sml || findSmlData(payload);
