@@ -77,13 +77,31 @@ services:
     restart: unless-stopped
     env_file:
       - .env
-    # hame-relay expects a config.json file, so we generate it on the fly before starting the node app.
-    # We use sed to inject the MQTT_USER and MQTT_PASSWORD into the MQTT_HOST url.
+    environment:
+      - HAME_USER=${HAME_USER}
+      - HAME_PASS=${HAME_PASS}
+      - MQTT_HOST=${MQTT_HOST}
+      - MQTT_USER=${MQTT_USER}
+      - MQTT_PASSWORD=${MQTT_PASSWORD}
+    # We generate the config.json on the fly using node to avoid any shell quoting issues
     command: >
       /bin/sh -c '
       mkdir -p /app/config &&
-      BROKER=$$(echo $$MQTT_HOST | sed "s|://|://$$MQTT_USER:$$MQTT_PASSWORD@|") &&
-      echo "{\"broker_url\":\"$$BROKER\",\"username\":\"$$HAME_USER\",\"password\":\"$$HAME_PASS\",\"inverse_forwarding\":true}" > /app/config/config.json &&
+      node -e "
+      const fs = require(\"fs\");
+      let url = process.env.MQTT_HOST;
+      if (process.env.MQTT_USER) {
+        url = url.replace(\"://\", \"://\" + process.env.MQTT_USER + \":\" + process.env.MQTT_PASSWORD + \"@\");
+      }
+      const config = {
+        broker_url: url,
+        username: process.env.HAME_USER,
+        password: process.env.HAME_PASS,
+        inverse_forwarding: true
+      };
+      fs.writeFileSync(\"/app/config/config.json\", JSON.stringify(config, null, 2));
+      console.log(\"Generated config.json for \" + process.env.HAME_USER);
+      " &&
       node /app/dist/main.js
       '
     networks:
