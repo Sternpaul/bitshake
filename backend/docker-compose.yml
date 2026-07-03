@@ -80,12 +80,12 @@ services:
     # hame-relay expects a config.json file, so we generate it on the fly before starting the node app.
     # We use sed to inject the MQTT_USER and MQTT_PASSWORD into the MQTT_HOST url.
     command: >
-      /bin/sh -c "
+      /bin/sh -c '
       mkdir -p /app/config &&
-      BROKER=$$(echo $$MQTT_HOST | sed \"s|://|://$${MQTT_USER}:$${MQTT_PASSWORD}@|\") &&
-      echo '{\"broker_url\":\"'$$BROKER'\",\"email\":\"'$$HAME_USER'\",\"password\":\"'$$HAME_PASS'\",\"inverse_forwarding\":true}' > /app/config/config.json &&
+      BROKER=$$(echo $$MQTT_HOST | sed "s|://|://$$MQTT_USER:$$MQTT_PASSWORD@|") &&
+      echo "{\"broker_url\":\"$$BROKER\",\"username\":\"$$HAME_USER\",\"password\":\"$$HAME_PASS\",\"inverse_forwarding\":true}" > /app/config/config.json &&
       node /app/dist/main.js
-      "
+      '
     networks:
       - bitshake-net
 
