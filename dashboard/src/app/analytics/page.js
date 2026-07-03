@@ -94,14 +94,15 @@ function AnalyticsContent() {
   const tariff = overview?.settings?.feedin_tariff || 0;
   const enableFeedin = overview?.settings?.enable_feedin_tariff === 'true';
 
-  // --- New Calculations: Base Load & Yearly Projection ---
+  // --- Calculations: Base Load & Yearly Projection ---
   const validProfiles = profileData.filter(p => p.avg_consumption_w > 0);
   const baseLoadW = validProfiles.length > 0 ? Math.min(...validProfiles.map(p => p.avg_consumption_w)) : 0;
-  const baseLoadYearlyKwh = (baseLoadW * 24 * 365) / 1000;
-  const baseLoadYearlyCost = baseLoadYearlyKwh * price;
-
-  const avgDailyConsumed = chartData.length > 0 ? totalConsumed / chartData.length : 0;
-  const avgDailyExported = chartData.length > 0 ? totalExported / chartData.length : 0;
+  
+  // Fix 24h projection bug by dividing by 1 day instead of 288 buckets
+  const actualDays = range === '24h' ? 1 : (chartData.length || 1);
+  const avgDailyConsumed = totalConsumed / actualDays;
+  const avgDailyExported = totalExported / actualDays;
+  
   const projectedYearlyConsumed = avgDailyConsumed * 365;
   const projectedYearlyExported = avgDailyExported * 365;
   const projectedYearlyCost = projectedYearlyConsumed * price;
@@ -140,53 +141,34 @@ function AnalyticsContent() {
           <div className="kpi-card consumption">
             <div className="kpi-label"><span>📊</span> Gesamtverbrauch</div>
             <div className="kpi-value consuming">{totalConsumed.toFixed(1)}<span className="kpi-unit">kWh</span></div>
-            <div className="kpi-detail">Kosten: {(totalConsumed * price).toFixed(2)} €</div>
+            <div className="kpi-detail">Kosten im Zeitraum: {(totalConsumed * price).toFixed(2)} €</div>
+            <div className="kpi-detail" style={{ marginTop: '4px', opacity: 0.7 }}>Jahr-Prognose: {projectedYearlyConsumed.toFixed(0)} kWh</div>
           </div>
+          
           <div className="kpi-card solar">
             <div className="kpi-label"><span>☀️</span> Gesamteinspeisung</div>
             <div className="kpi-value feeding">{totalExported.toFixed(1)}<span className="kpi-unit">kWh</span></div>
-            {enableFeedin && <div className="kpi-detail">Ersparnis: {(totalExported * tariff).toFixed(2)} €</div>}
+            <div className="kpi-detail">
+              {enableFeedin ? `Ersparnis im Zeitraum: ${(totalExported * tariff).toFixed(2)} €` : 'Einspeisevergütung deaktiviert'}
+            </div>
+            <div className="kpi-detail" style={{ marginTop: '4px', opacity: 0.7 }}>Jahr-Prognose: {projectedYearlyExported.toFixed(0)} kWh</div>
           </div>
+          
           <div className="kpi-card">
-            <div className="kpi-label"><span>⚡</span> Durchschn. Leistung</div>
-            <div className="kpi-value">{Math.round(avgPower)}<span className="kpi-unit">W</span></div>
+            <div className="kpi-label"><span>⚡</span> Leistung</div>
+            <div className="kpi-value">{Math.round(avgPower)}<span className="kpi-unit">W Ø</span></div>
             <div className="kpi-detail">Spitze: {Math.round(peakPower)} W</div>
+            <div className="kpi-detail" style={{ marginTop: '4px', opacity: 0.7 }}>
+              Standby: {baseLoadW > 0 ? `${Math.round(baseLoadW)} W` : 'Berechne...'}
+            </div>
           </div>
+          
           <div className="kpi-card success">
             <div className="kpi-label"><span>💰</span> {enableFeedin ? 'Netto Kosten' : 'Stromkosten'}</div>
             <div className="kpi-value">{enableFeedin ? ((totalConsumed * price) - (totalExported * tariff)).toFixed(2) : (totalConsumed * price).toFixed(2)}<span className="kpi-unit">€</span></div>
-            <div className="kpi-detail">{enableFeedin ? 'Bezugskosten minus Einspeisevergütung' : 'Kosten für reinen Netzbezug'}</div>
+            <div className="kpi-detail">{enableFeedin ? 'Bezugskosten minus Einspeisevergütung' : 'Für diesen Zeitraum'}</div>
+            <div className="kpi-detail" style={{ marginTop: '4px', opacity: 0.7 }}>Jahr-Prognose: {projectedYearlyNet.toFixed(0)} €</div>
           </div>
-        </div>
-
-        {/* Projections and Insights Section */}
-        <h2 className="section-title" style={{ marginTop: 'var(--space-8)', marginBottom: 'var(--space-4)', fontSize: '1.2rem', color: 'var(--text-secondary)' }}>Prognosen & Einblicke</h2>
-        <div className="kpi-grid" style={{ marginBottom: 'var(--space-8)' }}>
-          
-          <div className="kpi-card">
-            <div className="kpi-label"><span>💤</span> Standby-Verbrauch</div>
-            <div className="kpi-value">{Math.round(baseLoadW)}<span className="kpi-unit">W</span></div>
-            <div className="kpi-detail">Kostet ca. {baseLoadYearlyCost.toFixed(0)} € pro Jahr</div>
-          </div>
-
-          <div className="kpi-card">
-            <div className="kpi-label"><span>📅</span> Jahresprognose (Bezug)</div>
-            <div className="kpi-value consuming">{projectedYearlyConsumed.toFixed(0)}<span className="kpi-unit">kWh</span></div>
-            <div className="kpi-detail">Hochgerechnet aus aktuellem Zeitraum</div>
-          </div>
-
-          <div className="kpi-card">
-            <div className="kpi-label"><span>📅</span> Jahresprognose (Einspeisung)</div>
-            <div className="kpi-value feeding">{projectedYearlyExported.toFixed(0)}<span className="kpi-unit">kWh</span></div>
-            <div className="kpi-detail">Hochgerechnet aus aktuellem Zeitraum</div>
-          </div>
-
-          <div className="kpi-card">
-            <div className="kpi-label"><span>🔮</span> Prognostizierte Jahreskosten</div>
-            <div className="kpi-value">{projectedYearlyNet.toFixed(0)}<span className="kpi-unit">€</span></div>
-            <div className="kpi-detail">{enableFeedin ? 'Netto (inkl. Einspeisevergütung)' : 'Reine Stromkosten'}</div>
-          </div>
-
         </div>
 
         {/* Energy Balance Chart */}
