@@ -8,6 +8,7 @@ import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import HourlyProfileChart from '@/components/charts/HourlyProfileChart';
+import WeeklyHeatmap from '@/components/charts/WeeklyHeatmap';
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload || payload.length === 0) return null;
@@ -32,23 +33,26 @@ function AnalyticsContent() {
   const [overview, setOverview] = useState(null);
   const [profileData, setProfileData] = useState([]);
   const [trends, setTrends] = useState(null);
+  const [heatmapData, setHeatmapData] = useState([]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const daysForProfile = range === '24h' ? 1 : range === '7d' ? 7 : range === '30d' ? 30 : 365;
       
-      const [historyRes, overviewRes, profileRes, trendsRes] = await Promise.allSettled([
+      const [historyRes, overviewRes, profileRes, trendsRes, heatmapRes] = await Promise.allSettled([
         api.getHistory(range),
         api.getOverview(),
         api.getHourlyProfile(daysForProfile),
         api.getComparison(range),
+        api.getHeatmap(daysForProfile),
       ]);
 
       if (historyRes.status === 'fulfilled') setData(historyRes.value.data || []);
       if (overviewRes.status === 'fulfilled') setOverview(overviewRes.value);
       if (profileRes.status === 'fulfilled') setProfileData(profileRes.value.data || []);
       if (trendsRes.status === 'fulfilled') setTrends(trendsRes.value);
+      if (heatmapRes.status === 'fulfilled') setHeatmapData(heatmapRes.value.data || []);
     } catch (err) {
       console.error('Failed to fetch analytics:', err);
     } finally {
@@ -276,6 +280,15 @@ function AnalyticsContent() {
           loading={loading} 
           rangeLabel={ranges.find(r => r.key === range)?.label} 
         />
+
+        {/* Weekly Heatmap */}
+        <div style={{ marginTop: 'var(--space-6)' }}>
+          <WeeklyHeatmap 
+            data={heatmapData} 
+            loading={loading} 
+            rangeLabel={ranges.find(r => r.key === range)?.label} 
+          />
+        </div>
       </main>
     </div>
   );

@@ -110,6 +110,7 @@ export const api = {
   getOverview: () => apiRequest('/api/stats/overview'),
   getHourlyProfile: (days = 30) => apiRequest(`/api/stats/hourly-profile?days=${days}`),
   getComparison: (range = '7d') => apiRequest(`/api/stats/compare?range=${range}`),
+  getHeatmap: (days = 30) => apiRequest(`/api/stats/heatmap?days=${days}`),
 
   // Settings
   getSettings: () => apiRequest('/api/settings'),

@@ -227,4 +227,54 @@ export default async function statsRoutes(fastify) {
       return reply.code(500).send({ error: 'Failed to compute trend comparison' });
     }
   });
+
+  // GET /api/stats/heatmap — Weekly 7x24 Matrix
+  fastify.get('/api/stats/heatmap', {
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: {
+          days: { type: 'integer', minimum: 1, maximum: 365, default: 30 },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    const { days } = request.query;
+
+    try {
+      const result = await query(
+        `SELECT
+           EXTRACT(ISODOW FROM time) AS day_of_week,
+           EXTRACT(HOUR FROM time) AS hour_of_day,
+           AVG(power_current) FILTER (WHERE power_current > 0) AS avg_consumption_w
+         FROM meter_readings
+         WHERE time >= NOW() - $1::interval
+         GROUP BY day_of_week, hour_of_day`,
+        [`${days} days`]
+      );
+
+      // Create empty 7x24 matrix
+      const matrix = Array.from({ length: 7 }, (_, d) =>
+        Array.from({ length: 24 }, (_, h) => ({
+          day: d + 1,
+          hour: h,
+          value: 0
+        }))
+      );
+
+      // Fill matrix
+      for (const row of result.rows) {
+        const d = Number(row.day_of_week) - 1; // 1-7 -> 0-6
+        const h = Number(row.hour_of_day);
+        if (d >= 0 && d <= 6 && h >= 0 && h <= 23) {
+          matrix[d][h].value = parseFloat(row.avg_consumption_w || 0);
+        }
+      }
+
+      return reply.send({ data: matrix });
+    } catch (err) {
+      request.log.error(err);
+      return reply.code(500).send({ error: 'Failed to compute heatmap' });
+    }
+  });
 }
