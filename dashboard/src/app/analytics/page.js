@@ -7,6 +7,7 @@ import { AuthProvider } from '@/lib/auth-context';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import HourlyProfileChart from '@/components/charts/HourlyProfileChart';
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload || payload.length === 0) return null;
@@ -29,17 +30,22 @@ function AnalyticsContent() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState(null);
+  const [profileData, setProfileData] = useState([]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [historyRes, overviewRes] = await Promise.allSettled([
+      const daysForProfile = range === '24h' ? 1 : range === '7d' ? 7 : range === '30d' ? 30 : 365;
+      
+      const [historyRes, overviewRes, profileRes] = await Promise.allSettled([
         api.getHistory(range),
         api.getOverview(),
+        api.getHourlyProfile(daysForProfile),
       ]);
 
       if (historyRes.status === 'fulfilled') setData(historyRes.value.data || []);
       if (overviewRes.status === 'fulfilled') setOverview(overviewRes.value);
+      if (profileRes.status === 'fulfilled') setProfileData(profileRes.value.data || []);
     } catch (err) {
       console.error('Failed to fetch analytics:', err);
     } finally {
@@ -190,6 +196,9 @@ function AnalyticsContent() {
             )}
           </div>
         </div>
+
+        {/* Hourly Profile Chart */}
+        <HourlyProfileChart data={profileData} loading={loading} />
       </main>
     </div>
   );

@@ -119,4 +119,50 @@ export default async function statsRoutes(fastify) {
       return reply.code(500).send({ error: 'Failed to compute overview stats' });
     }
   });
+
+  // GET /api/stats/hourly-profile — Average power per hour of the day
+  fastify.get('/api/stats/hourly-profile', {
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: {
+          days: { type: 'integer', minimum: 1, maximum: 365, default: 30 },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    const { days } = request.query;
+
+    try {
+      const result = await query(
+        `SELECT
+           EXTRACT(HOUR FROM time) AS hour_of_day,
+           AVG(power_current) FILTER (WHERE power_current > 0) AS avg_consumption_w,
+           ABS(AVG(power_current) FILTER (WHERE power_current < 0)) AS avg_export_w
+         FROM meter_readings
+         WHERE time >= NOW() - $1::interval
+         GROUP BY hour_of_day
+         ORDER BY hour_of_day ASC`,
+        [`${days} days`]
+      );
+
+      // Ensure all 24 hours are present in the response
+      const dataMap = new Map(result.rows.map(r => [Number(r.hour_of_day), r]));
+      
+      const full24Hours = Array.from({ length: 24 }, (_, i) => {
+        const row = dataMap.get(i);
+        return {
+          hour: i,
+          hour_label: `${String(i).padStart(2, '0')}:00`,
+          avg_consumption_w: parseFloat(row?.avg_consumption_w || 0),
+          avg_export_w: parseFloat(row?.avg_export_w || 0),
+        };
+      });
+
+      return reply.send({ data: full24Hours });
+    } catch (err) {
+      request.log.error(err);
+      return reply.code(500).send({ error: 'Failed to compute hourly profile' });
+    }
+  });
 }

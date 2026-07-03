@@ -108,6 +108,7 @@ export const api = {
 
   // Stats
   getOverview: () => apiRequest('/api/stats/overview'),
+  getHourlyProfile: (days = 30) => apiRequest(`/api/stats/hourly-profile?days=${days}`),
 
   // Settings
   getSettings: () => apiRequest('/api/settings'),
