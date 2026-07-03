@@ -52,10 +52,14 @@ function DashboardContent() {
 
     fetchData();
 
-    // Auto-refresh every 10 seconds
-    const interval = setInterval(fetchData, 10000);
+    // Use the refresh interval from settings, default to 10 seconds
+    const intervalSeconds = overview?.settings?.dashboard_refresh_seconds 
+      ? parseInt(overview.settings.dashboard_refresh_seconds, 10) 
+      : 10;
+
+    const interval = setInterval(fetchData, intervalSeconds * 1000);
     return () => clearInterval(interval);
-  }, [router, fetchData]);
+  }, [router, fetchData, overview?.settings?.dashboard_refresh_seconds]);
 
   const current = overview?.current;
   const today = overview?.today;
