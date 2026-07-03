@@ -165,4 +165,66 @@ export default async function statsRoutes(fastify) {
       return reply.code(500).send({ error: 'Failed to compute hourly profile' });
     }
   });
+
+  // GET /api/stats/compare — Compare current period to previous period
+  fastify.get('/api/stats/compare', {
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: {
+          range: { type: 'string', enum: ['24h', '7d', '30d', '1y'], default: '7d' },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    const { range } = request.query;
+
+    let int1 = '7 days';
+    let int2 = '14 days';
+    if (range === '24h') { int1 = '1 day'; int2 = '2 days'; }
+    if (range === '30d') { int1 = '30 days'; int2 = '60 days'; }
+    if (range === '1y') { int1 = '1 year'; int2 = '2 years'; }
+
+    try {
+      const currentRes = await query(
+        `SELECT 
+           LAST(total_import, time) - FIRST(total_import, time) AS consumed,
+           LAST(total_export, time) - FIRST(total_export, time) AS exported
+         FROM meter_readings
+         WHERE time >= NOW() - $1::interval`,
+        [int1]
+      );
+
+      const previousRes = await query(
+        `SELECT 
+           LAST(total_import, time) - FIRST(total_import, time) AS consumed,
+           LAST(total_export, time) - FIRST(total_export, time) AS exported
+         FROM meter_readings
+         WHERE time >= NOW() - $2::interval AND time < NOW() - $1::interval`,
+        [int2, int1]
+      );
+
+      const current = currentRes.rows[0] || { consumed: 0, exported: 0 };
+      const previous = previousRes.rows[0] || { consumed: 0, exported: 0 };
+
+      const curCons = parseFloat(current.consumed || 0);
+      const curExp = parseFloat(current.exported || 0);
+      const prevCons = parseFloat(previous.consumed || 0);
+      const prevExp = parseFloat(previous.exported || 0);
+
+      // If previous is 0 (or no data), we cannot calculate a trend percentage safely.
+      const trendCons = prevCons > 0 ? ((curCons - prevCons) / prevCons) * 100 : null;
+      const trendExp = prevExp > 0 ? ((curExp - prevExp) / prevExp) * 100 : null;
+
+      return reply.send({
+        current: { consumed: curCons, exported: curExp },
+        previous: { consumed: prevCons, exported: prevExp },
+        trend_consumed_pct: trendCons,
+        trend_exported_pct: trendExp
+      });
+    } catch (err) {
+      request.log.error(err);
+      return reply.code(500).send({ error: 'Failed to compute trend comparison' });
+    }
+  });
 }

@@ -31,21 +31,24 @@ function AnalyticsContent() {
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState(null);
   const [profileData, setProfileData] = useState([]);
+  const [trends, setTrends] = useState(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const daysForProfile = range === '24h' ? 1 : range === '7d' ? 7 : range === '30d' ? 30 : 365;
       
-      const [historyRes, overviewRes, profileRes] = await Promise.allSettled([
+      const [historyRes, overviewRes, profileRes, trendsRes] = await Promise.allSettled([
         api.getHistory(range),
         api.getOverview(),
         api.getHourlyProfile(daysForProfile),
+        api.getComparison(range),
       ]);
 
       if (historyRes.status === 'fulfilled') setData(historyRes.value.data || []);
       if (overviewRes.status === 'fulfilled') setOverview(overviewRes.value);
       if (profileRes.status === 'fulfilled') setProfileData(profileRes.value.data || []);
+      if (trendsRes.status === 'fulfilled') setTrends(trendsRes.value);
     } catch (err) {
       console.error('Failed to fetch analytics:', err);
     } finally {
@@ -109,6 +112,48 @@ function AnalyticsContent() {
   const projectedYearlyEarnings = projectedYearlyExported * tariff;
   const projectedYearlyNet = enableFeedin ? projectedYearlyCost - projectedYearlyEarnings : projectedYearlyCost;
 
+  // --- Trend Badge Component ---
+  const TrendBadge = ({ pct, invertColors = false }) => {
+    if (pct === null || pct === undefined) return null; // Not enough data yet
+    
+    const isIncrease = pct > 0;
+    const absPct = Math.abs(pct).toFixed(1);
+    
+    // Invert colors: normally increase is bad (red), decrease is good (green).
+    // For solar export, increase is good (green), decrease is bad (red).
+    const isGood = invertColors ? isIncrease : !isIncrease;
+    const isStrong = Math.abs(pct) > 10;
+    
+    // Determine CSS classes for dynamic styling
+    let badgeClass = 'trend-badge ';
+    if (isGood) {
+      badgeClass += isStrong ? 'trend-good-strong' : 'trend-good-light';
+    } else {
+      badgeClass += isStrong ? 'trend-bad-strong' : 'trend-bad-light';
+    }
+
+    return (
+      <div className={badgeClass} style={{ 
+        position: 'absolute', 
+        top: '16px', 
+        right: '16px', 
+        padding: '2px 8px', 
+        borderRadius: '12px', 
+        fontSize: '0.75rem', 
+        fontWeight: '600',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '4px',
+        backgroundColor: isGood ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+        color: isGood ? (isStrong ? '#4ade80' : '#86efac') : (isStrong ? '#f87171' : '#fca5a5'),
+        border: `1px solid ${isGood ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
+      }}>
+        <span>{isIncrease ? '📈' : '📉'}</span>
+        <span>{isIncrease ? '+' : '-'}{absPct}%</span>
+      </div>
+    );
+  };
+
   return (
     <div className="app-layout">
       <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
@@ -138,14 +183,16 @@ function AnalyticsContent() {
 
         {/* Summary KPIs for selected range */}
         <div className="kpi-grid" style={{ marginBottom: 'var(--space-8)' }}>
-          <div className="kpi-card consumption">
+          <div className="kpi-card consumption" style={{ position: 'relative' }}>
+            <TrendBadge pct={trends?.trend_consumed_pct} invertColors={false} />
             <div className="kpi-label"><span>📊</span> Gesamtverbrauch</div>
             <div className="kpi-value consuming">{totalConsumed.toFixed(1)}<span className="kpi-unit">kWh</span></div>
             <div className="kpi-detail">Kosten im Zeitraum: {(totalConsumed * price).toFixed(2)} €</div>
             <div className="kpi-detail" style={{ marginTop: '4px', opacity: 0.7 }}>Jahr-Prognose: {projectedYearlyConsumed.toFixed(0)} kWh</div>
           </div>
           
-          <div className="kpi-card solar">
+          <div className="kpi-card solar" style={{ position: 'relative' }}>
+            <TrendBadge pct={trends?.trend_exported_pct} invertColors={true} />
             <div className="kpi-label"><span>☀️</span> Gesamteinspeisung</div>
             <div className="kpi-value feeding">{totalExported.toFixed(1)}<span className="kpi-unit">kWh</span></div>
             <div className="kpi-detail">
