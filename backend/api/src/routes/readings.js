@@ -94,10 +94,10 @@ export default async function readingsRoutes(fastify) {
           break;
 
         case '7d':
-          // Use hourly continuous aggregate
+          // Use daily continuous aggregate
           queryText = `
             SELECT bucket, avg_power, max_power, min_power, consumed_kwh, exported_kwh
-            FROM hourly_energy
+            FROM daily_energy
             WHERE bucket >= NOW() - INTERVAL '7 days'
             ORDER BY bucket ASC`;
           params = [];
