@@ -82,6 +82,8 @@ function AnalyticsContent() {
   const avgPower = chartData.length > 0 ? chartData.reduce((sum, d) => sum + d.avg_power, 0) / chartData.length : 0;
   const peakPower = chartData.length > 0 ? Math.max(...chartData.map(d => d.max_power)) : 0;
 
+  const showDots = chartData.length <= 5;
+
   const price = overview?.settings?.electricity_price || 0.35;
   const tariff = overview?.settings?.feedin_tariff || 0;
   const enableFeedin = overview?.settings?.enable_feedin_tariff === 'true';
@@ -181,8 +183,8 @@ function AnalyticsContent() {
                   <YAxis stroke="rgba(255,255,255,0.2)" tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} tickFormatter={v => `${v}W`} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend wrapperStyle={{ fontSize: '12px' }} />
-                  <Area type="monotone" dataKey="avg_power" name="Durchschnitt" stroke="hsl(210, 100%, 60%)" fill="url(#avgPowerGrad)" strokeWidth={2} dot={false} />
-                  <Area type="monotone" dataKey="max_power" name="Spitze" stroke="hsl(0, 80%, 60%)" fill="transparent" strokeWidth={1.5} strokeDasharray="4 4" dot={false} />
+                  <Area type="monotone" dataKey="avg_power" name="Durchschnitt" stroke="hsl(210, 100%, 60%)" fill="url(#avgPowerGrad)" strokeWidth={2} dot={showDots ? { r: 3, fill: 'var(--bg-card)' } : false} activeDot={{ r: 5 }} />
+                  <Area type="monotone" dataKey="max_power" name="Spitze" stroke="hsl(0, 80%, 60%)" fill="transparent" strokeWidth={1.5} strokeDasharray="4 4" dot={showDots ? { r: 3, fill: 'var(--bg-card)' } : false} activeDot={{ r: 5 }} />
                 </AreaChart>
               </ResponsiveContainer>
             )}
