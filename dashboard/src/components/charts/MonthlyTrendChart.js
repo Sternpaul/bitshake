@@ -36,6 +36,8 @@ export default function MonthlyTrendChart({ data = [], loading }) {
     exported: Number(d.exported_kwh || 0),
   }));
 
+  const showDots = formattedData.length <= 5;
+
   return (
     <div className="chart-card">
       <div className="chart-title">Dieser Monat</div>
@@ -74,7 +76,8 @@ export default function MonthlyTrendChart({ data = [], loading }) {
               stroke="hsl(210, 100%, 60%)"
               fill="url(#monthConsumption)"
               strokeWidth={2}
-              dot={false}
+              dot={showDots ? { r: 3, fill: 'var(--bg-card)' } : false}
+              activeDot={{ r: 5 }}
             />
             <Area
               type="monotone"
@@ -83,7 +86,8 @@ export default function MonthlyTrendChart({ data = [], loading }) {
               stroke="hsl(38, 92%, 55%)"
               fill="url(#monthExport)"
               strokeWidth={2}
-              dot={false}
+              dot={showDots ? { r: 3, fill: 'var(--bg-card)' } : false}
+              activeDot={{ r: 5 }}
             />
           </AreaChart>
         </ResponsiveContainer>
