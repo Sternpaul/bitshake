@@ -77,12 +77,15 @@ services:
     restart: unless-stopped
     env_file:
       - .env
-    environment:
-      HAME_USER: ${HAME_USER}
-      HAME_PASS: ${HAME_PASS}
-      MQTT_HOST: ${MQTT_HOST}
-      MQTT_USER: ${MQTT_USER}
-      MQTT_PASSWORD: ${MQTT_PASSWORD}
+    # hame-relay expects a config.json file, so we generate it on the fly before starting the node app.
+    # We use sed to inject the MQTT_USER and MQTT_PASSWORD into the MQTT_HOST url.
+    command: >
+      /bin/sh -c "
+      mkdir -p /app/config &&
+      BROKER=$$(echo $$MQTT_HOST | sed \"s|://|://$${MQTT_USER}:$${MQTT_PASSWORD}@|\") &&
+      echo '{\"broker_url\":\"'$$BROKER'\",\"username\":\"'$$HAME_USER'\",\"password\":\"'$$HAME_PASS'\",\"inverse_forwarding\":true}' > /app/config/config.json &&
+      node /app/dist/main.js
+      "
     networks:
       - bitshake-net
 
@@ -93,8 +96,8 @@ services:
     env_file:
       - .env
     environment:
-      MQTT_HOST: ${MQTT_HOST}
-      MQTT_USER: ${MQTT_USER}
+      MQTT_BROKER_URL: ${MQTT_HOST}
+      MQTT_USERNAME: ${MQTT_USER}
       MQTT_PASSWORD: ${MQTT_PASSWORD}
       DEVICE_0: "HMI-1:${MARSTEK_MAC}"
     networks:
