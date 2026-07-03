@@ -63,6 +63,7 @@ export default async function authRoutes(fastify) {
         httpOnly: true,
         secure: true,
         sameSite: 'none',
+        maxAge: 30 * 24 * 60 * 60,  // 30 days in seconds
       });
 
       return reply.send({
@@ -146,7 +147,7 @@ export default async function authRoutes(fastify) {
     if (request.cookies.token) {
       invalidateToken(request.cookies.token);
     }
-    reply.clearCookie('token', { path: '/', sameSite: 'none', secure: true });
+    reply.clearCookie('token', { path: '/', sameSite: 'none', secure: true, maxAge: 0 });
     return reply.send({ message: 'Logged out successfully' });
   });
 }

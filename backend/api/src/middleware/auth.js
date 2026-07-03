@@ -50,7 +50,7 @@ export async function verifyToken(request, reply) {
  * @returns {string} JWT token
  */
 export function generateToken(payload) {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '30d' });
 }
 
 /**
