@@ -128,11 +128,18 @@ export default async function readingsRoutes(fastify) {
           break;
 
         case '1y':
-          // Use daily continuous aggregate
+          // Calculate dynamically to ensure immediate availability for new installs
           queryText = `
-            SELECT bucket, avg_power, max_power, min_power, consumed_kwh, exported_kwh
-            FROM daily_energy
-            WHERE bucket >= NOW() - INTERVAL '1 year'
+            SELECT
+              time_bucket('1 day', time) AS bucket,
+              AVG(power_current) AS avg_power,
+              MAX(power_current) AS max_power,
+              MIN(power_current) AS min_power,
+              LAST(total_import, time) - FIRST(total_import, time) AS consumed_kwh,
+              LAST(total_export, time) - FIRST(total_export, time) AS exported_kwh
+            FROM meter_readings
+            WHERE time >= NOW() - INTERVAL '1 year'
+            GROUP BY bucket
             ORDER BY bucket ASC`;
           params = [];
           break;
