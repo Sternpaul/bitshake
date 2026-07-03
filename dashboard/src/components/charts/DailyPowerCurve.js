@@ -1,6 +1,7 @@
 'use client';
 
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { useTheme } from 'next-themes';
 import { buildAdaptiveGradient } from '@/lib/chart-utils';
 
 function CustomTooltip({ active, payload, label }) {
@@ -20,6 +21,9 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 export default function DailyPowerCurve({ data = [], loading }) {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+
   if (loading) {
     return (
       <div className="chart-card">
@@ -38,7 +42,7 @@ export default function DailyPowerCurve({ data = [], loading }) {
   }));
 
   // Build adaptive heat-map gradient
-  const { fillStops, strokeStops } = buildAdaptiveGradient(formattedData, 'power');
+  const { fillStops, strokeStops } = buildAdaptiveGradient(formattedData, 'power', { isDark });
 
   return (
     <div className="chart-card">
