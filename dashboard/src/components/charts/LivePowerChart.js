@@ -1,18 +1,20 @@
 'use client';
 
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { buildAdaptiveGradient } from '@/lib/chart-utils';
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload || payload.length === 0) return null;
 
+  const value = payload[0]?.value || 0;
+  const isExporting = value < 0;
+
   return (
     <div className="custom-tooltip">
       <div className="label">{new Date(label).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
-      {payload.map((entry, index) => (
-        <div key={index} className="value" style={{ color: entry.color }}>
-          {entry.name}: {Math.round(entry.value)} W
-        </div>
-      ))}
+      <div className="value" style={{ color: isExporting ? 'hsl(38, 92%, 55%)' : 'hsl(210, 100%, 60%)' }}>
+        {Math.abs(Math.round(value))} W {isExporting ? '(Einspeisung)' : '(Bezug)'}
+      </div>
     </div>
   );
 }
@@ -40,15 +42,8 @@ export default function LivePowerChart({ data = [], loading }) {
   const latestPower = formattedData.length > 0 ? formattedData[formattedData.length - 1].power : 0;
   const isExporting = latestPower < 0;
 
-  const calculateGradientOffset = (chartData) => {
-    if (chartData.length === 0) return 0;
-    const dataMax = Math.max(...chartData.map(i => i.power));
-    const dataMin = Math.min(...chartData.map(i => i.power));
-    if (dataMax <= 0) return 0;
-    if (dataMin >= 0) return 1;
-    return dataMax / (dataMax - dataMin);
-  };
-  const off = calculateGradientOffset(formattedData);
+  // Build adaptive heat-map gradient
+  const { fillStops, strokeStops, zeroOffset } = buildAdaptiveGradient(formattedData, 'power');
 
   return (
     <div className="chart-card full-width">
@@ -73,15 +68,15 @@ export default function LivePowerChart({ data = [], loading }) {
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={formattedData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
-              <linearGradient id="splitStroke" x1="0" y1="0" x2="0" y2="1">
-                <stop offset={off} stopColor="hsl(210, 100%, 60%)" stopOpacity={1} />
-                <stop offset={off} stopColor="hsl(38, 92%, 55%)" stopOpacity={1} />
+              <linearGradient id="adaptiveStrokeLive" x1="0" y1="0" x2="0" y2="1">
+                {strokeStops.map((stop, i) => (
+                  <stop key={i} offset={stop.offset} stopColor={stop.color} stopOpacity={stop.opacity} />
+                ))}
               </linearGradient>
-              <linearGradient id="splitFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(210, 100%, 60%)" stopOpacity={0.3} />
-                <stop offset={off} stopColor="hsl(210, 100%, 60%)" stopOpacity={0} />
-                <stop offset={off} stopColor="hsl(38, 92%, 55%)" stopOpacity={0} />
-                <stop offset="100%" stopColor="hsl(38, 92%, 55%)" stopOpacity={0.3} />
+              <linearGradient id="adaptiveFillLive" x1="0" y1="0" x2="0" y2="1">
+                {fillStops.map((stop, i) => (
+                  <stop key={i} offset={stop.offset} stopColor={stop.color} stopOpacity={stop.opacity} />
+                ))}
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -104,8 +99,8 @@ export default function LivePowerChart({ data = [], loading }) {
               type="monotone"
               dataKey="power"
               name="Leistung"
-              stroke="url(#splitStroke)"
-              fill="url(#splitFill)"
+              stroke="url(#adaptiveStrokeLive)"
+              fill="url(#adaptiveFillLive)"
               strokeWidth={2}
               dot={false}
               isAnimationActive={false}
