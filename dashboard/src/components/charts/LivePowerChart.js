@@ -22,7 +22,7 @@ export default function LivePowerChart({ data = [], loading }) {
     return (
       <div className="chart-card full-width">
         <div className="chart-title">Aktuelle Leistung</div>
-        <div className="chart-subtitle">Letzte 30 Minuten — aktualisiert alle 10 Sekunden</div>
+        <div className="chart-subtitle">Letzte 30 Minuten</div>
         <div className="chart-wrapper">
           <div className="skeleton" style={{ width: '100%', height: '100%' }} />
         </div>
@@ -40,12 +40,22 @@ export default function LivePowerChart({ data = [], loading }) {
   const latestPower = formattedData.length > 0 ? formattedData[formattedData.length - 1].power : 0;
   const isExporting = latestPower < 0;
 
+  const calculateGradientOffset = (chartData) => {
+    if (chartData.length === 0) return 0;
+    const dataMax = Math.max(...chartData.map(i => i.power));
+    const dataMin = Math.min(...chartData.map(i => i.power));
+    if (dataMax <= 0) return 0;
+    if (dataMin >= 0) return 1;
+    return dataMax / (dataMax - dataMin);
+  };
+  const off = calculateGradientOffset(formattedData);
+
   return (
     <div className="chart-card full-width">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <div className="chart-title">Aktuelle Leistung</div>
-          <div className="chart-subtitle">Letzte 30 Minuten — aktualisiert alle 10 Sekunden</div>
+          <div className="chart-subtitle">Letzte 30 Minuten</div>
         </div>
         <div style={{
           fontSize: '1.5rem',
@@ -63,9 +73,15 @@ export default function LivePowerChart({ data = [], loading }) {
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={formattedData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
-              <linearGradient id="powerGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(210, 100%, 60%)" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="hsl(210, 100%, 60%)" stopOpacity={0} />
+              <linearGradient id="splitStroke" x1="0" y1="0" x2="0" y2="1">
+                <stop offset={off} stopColor="hsl(210, 100%, 60%)" stopOpacity={1} />
+                <stop offset={off} stopColor="hsl(38, 92%, 55%)" stopOpacity={1} />
+              </linearGradient>
+              <linearGradient id="splitFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="hsl(210, 100%, 60%)" stopOpacity={0.3} />
+                <stop offset={off} stopColor="hsl(210, 100%, 60%)" stopOpacity={0} />
+                <stop offset={off} stopColor="hsl(38, 92%, 55%)" stopOpacity={0} />
+                <stop offset="100%" stopColor="hsl(38, 92%, 55%)" stopOpacity={0.3} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -88,8 +104,8 @@ export default function LivePowerChart({ data = [], loading }) {
               type="monotone"
               dataKey="power"
               name="Leistung"
-              stroke="hsl(210, 100%, 60%)"
-              fill="url(#powerGradient)"
+              stroke="url(#splitStroke)"
+              fill="url(#splitFill)"
               strokeWidth={2}
               dot={false}
               isAnimationActive={false}

@@ -8,11 +8,14 @@ function CustomTooltip({ active, payload, label }) {
   return (
     <div className="custom-tooltip">
       <div className="label">{label}</div>
-      {payload.map((entry, index) => (
-        <div key={index} className="value" style={{ color: entry.color }}>
-          {entry.name}: {Number(entry.value).toFixed(1)} W
-        </div>
-      ))}
+      {payload.map((entry, index) => {
+        const isExporting = entry.value < 0;
+        return (
+          <div key={index} className="value" style={{ color: isExporting ? 'hsl(38, 92%, 55%)' : 'hsl(210, 100%, 60%)' }}>
+            {entry.name}: {Math.abs(Number(entry.value)).toFixed(1)} W {isExporting ? '(Einspeisung)' : '(Bezug)'}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -32,9 +35,18 @@ export default function DailyPowerCurve({ data = [], loading }) {
 
   const formattedData = data.map(d => ({
     time: new Date(d.bucket).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
-    consumption: Math.max(0, d.avg_power || 0),
-    feedin: Math.abs(Math.min(0, d.avg_power || 0)),
+    power: d.avg_power || 0,
   }));
+
+  const calculateGradientOffset = (chartData) => {
+    if (chartData.length === 0) return 0;
+    const dataMax = Math.max(...chartData.map(i => i.power));
+    const dataMin = Math.min(...chartData.map(i => i.power));
+    if (dataMax <= 0) return 0;
+    if (dataMin >= 0) return 1;
+    return dataMax / (dataMax - dataMin);
+  };
+  const off = calculateGradientOffset(formattedData);
 
   return (
     <div className="chart-card">
@@ -44,13 +56,15 @@ export default function DailyPowerCurve({ data = [], loading }) {
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={formattedData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
-              <linearGradient id="consumptionGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(210, 100%, 60%)" stopOpacity={0.25} />
-                <stop offset="95%" stopColor="hsl(210, 100%, 60%)" stopOpacity={0} />
+              <linearGradient id="splitStrokeDaily" x1="0" y1="0" x2="0" y2="1">
+                <stop offset={off} stopColor="hsl(210, 100%, 60%)" stopOpacity={1} />
+                <stop offset={off} stopColor="hsl(38, 92%, 55%)" stopOpacity={1} />
               </linearGradient>
-              <linearGradient id="feedinGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(38, 92%, 55%)" stopOpacity={0.25} />
-                <stop offset="95%" stopColor="hsl(38, 92%, 55%)" stopOpacity={0} />
+              <linearGradient id="splitFillDaily" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="hsl(210, 100%, 60%)" stopOpacity={0.25} />
+                <stop offset={off} stopColor="hsl(210, 100%, 60%)" stopOpacity={0} />
+                <stop offset={off} stopColor="hsl(38, 92%, 55%)" stopOpacity={0} />
+                <stop offset="100%" stopColor="hsl(38, 92%, 55%)" stopOpacity={0.25} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -71,19 +85,10 @@ export default function DailyPowerCurve({ data = [], loading }) {
             />
             <Area
               type="monotone"
-              dataKey="consumption"
-              name="Bezug"
-              stroke="hsl(210, 100%, 60%)"
-              fill="url(#consumptionGradient)"
-              strokeWidth={2}
-              dot={false}
-            />
-            <Area
-              type="monotone"
-              dataKey="feedin"
-              name="Einspeisung"
-              stroke="hsl(38, 92%, 55%)"
-              fill="url(#feedinGradient)"
+              dataKey="power"
+              name="Leistung"
+              stroke="url(#splitStrokeDaily)"
+              fill="url(#splitFillDaily)"
               strokeWidth={2}
               dot={false}
             />
