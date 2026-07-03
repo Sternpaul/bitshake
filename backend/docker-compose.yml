@@ -83,7 +83,7 @@ services:
       /bin/sh -c "
       mkdir -p /app/config &&
       BROKER=$$(echo $$MQTT_HOST | sed \"s|://|://$${MQTT_USER}:$${MQTT_PASSWORD}@|\") &&
-      echo '{\"broker_url\":\"'$$BROKER'\",\"username\":\"'$$HAME_USER'\",\"password\":\"'$$HAME_PASS'\",\"inverse_forwarding\":true}' > /app/config/config.json &&
+      echo '{\"broker_url\":\"'$$BROKER'\",\"email\":\"'$$HAME_USER'\",\"password\":\"'$$HAME_PASS'\",\"inverse_forwarding\":true}' > /app/config/config.json &&
       node /app/dist/main.js
       "
     networks:
