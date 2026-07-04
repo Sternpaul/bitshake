@@ -44,7 +44,7 @@ export default async function readingsRoutes(fastify) {
 
     try {
       const result = await query(
-        `SELECT time, power_current, power_l1, power_l2, power_l3, total_import, total_export, solar_power, solar_energy_daily
+        `SELECT time, power_current, power_l1, power_l2, power_l3, total_import, total_export, solar_power, solar_energy_daily, solar_estimated_power
          FROM meter_readings
          WHERE time >= NOW() - $1::interval
          ORDER BY time ASC`,
@@ -83,6 +83,7 @@ export default async function readingsRoutes(fastify) {
               time_bucket('5 minutes', time) AS bucket,
               AVG(power_current) AS avg_power,
               AVG(solar_power) AS avg_solar_power,
+              AVG(solar_estimated_power) AS avg_solar_estimated_power,
               MAX(power_current) AS max_power,
               MIN(power_current) AS min_power,
               LAST(total_import, time) - FIRST(total_import, time) AS consumed_kwh,
@@ -101,6 +102,7 @@ export default async function readingsRoutes(fastify) {
               time_bucket('1 day', time) AS bucket,
               AVG(power_current) AS avg_power,
               AVG(solar_power) AS avg_solar_power,
+              AVG(solar_estimated_power) AS avg_solar_estimated_power,
               MAX(power_current) AS max_power,
               MIN(power_current) AS min_power,
               LAST(total_import, time) - FIRST(total_import, time) AS consumed_kwh,
@@ -119,6 +121,7 @@ export default async function readingsRoutes(fastify) {
               time_bucket('1 day', time) AS bucket,
               AVG(power_current) AS avg_power,
               AVG(solar_power) AS avg_solar_power,
+              AVG(solar_estimated_power) AS avg_solar_estimated_power,
               MAX(power_current) AS max_power,
               MIN(power_current) AS min_power,
               LAST(total_import, time) - FIRST(total_import, time) AS consumed_kwh,
@@ -137,6 +140,7 @@ export default async function readingsRoutes(fastify) {
               time_bucket('1 day', time) AS bucket,
               AVG(power_current) AS avg_power,
               AVG(solar_power) AS avg_solar_power,
+              AVG(solar_estimated_power) AS avg_solar_estimated_power,
               MAX(power_current) AS max_power,
               MIN(power_current) AS min_power,
               LAST(total_import, time) - FIRST(total_import, time) AS consumed_kwh,
@@ -177,6 +181,7 @@ export default async function readingsRoutes(fastify) {
            time_bucket('1 minute', time) AS bucket,
            AVG(power_current) AS avg_power,
            AVG(solar_power) AS avg_solar_power,
+           AVG(solar_estimated_power) AS avg_solar_estimated_power,
            AVG(power_l1) AS avg_power_l1,
            AVG(power_l2) AS avg_power_l2,
            AVG(power_l3) AS avg_power_l3,
@@ -213,7 +218,7 @@ export default async function readingsRoutes(fastify) {
 
     try {
       const result = await query(
-        `SELECT time, total_import, total_export, power_current, power_l1, power_l2, power_l3, solar_power, solar_energy_daily
+        `SELECT time, total_import, total_export, power_current, power_l1, power_l2, power_l3, solar_power, solar_energy_daily, solar_estimated_power
          FROM meter_readings
          WHERE time >= $1::date AND time < ($2::date + INTERVAL '1 day')
          ORDER BY time ASC`,
