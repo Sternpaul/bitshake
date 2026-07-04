@@ -9,6 +9,7 @@ import Header from '@/components/layout/Header';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import HourlyProfileChart from '@/components/charts/HourlyProfileChart';
 import WeeklyHeatmap from '@/components/charts/WeeklyHeatmap';
+import KPICard from '@/components/cards/KPICard';
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload || payload.length === 0) return null;
@@ -125,47 +126,7 @@ function AnalyticsContent() {
   const projectedYearlyEarnings = projectedYearlyExported * tariff;
   const projectedYearlyNet = enableFeedin ? projectedYearlyCost - projectedYearlyEarnings : projectedYearlyCost;
 
-  // --- Trend Badge Component ---
-  const TrendBadge = ({ pct, invertColors = false }) => {
-    if (pct === null || pct === undefined) return null; // Not enough data yet
-    
-    const isIncrease = pct > 0;
-    const absPct = Math.abs(pct).toFixed(1);
-    
-    // Invert colors: normally increase is bad (red), decrease is good (green).
-    // For solar export, increase is good (green), decrease is bad (red).
-    const isGood = invertColors ? isIncrease : !isIncrease;
-    const isStrong = Math.abs(pct) > 10;
-    
-    // Determine CSS classes for dynamic styling
-    let badgeClass = 'trend-badge ';
-    if (isGood) {
-      badgeClass += isStrong ? 'trend-good-strong' : 'trend-good-light';
-    } else {
-      badgeClass += isStrong ? 'trend-bad-strong' : 'trend-bad-light';
-    }
-
-    return (
-      <div className={badgeClass} style={{ 
-        position: 'absolute', 
-        top: '16px', 
-        right: '16px', 
-        padding: '2px 8px', 
-        borderRadius: '12px', 
-        fontSize: '0.75rem', 
-        fontWeight: '600',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '4px',
-        backgroundColor: isGood ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-        color: isGood ? (isStrong ? '#4ade80' : '#86efac') : (isStrong ? '#f87171' : '#fca5a5'),
-        border: `1px solid ${isGood ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
-      }}>
-        <span>{isIncrease ? '📈' : '📉'}</span>
-        <span>{isIncrease ? '+' : '-'}{absPct}%</span>
-      </div>
-    );
-  };
+  // Removed TrendBadge component as it is now integrated directly into KPICard
 
   return (
     <div className="app-layout">
@@ -196,58 +157,95 @@ function AnalyticsContent() {
 
         {/* Summary KPIs for selected range */}
         <div className="kpi-grid" style={{ marginBottom: 'var(--space-8)' }}>
-          <div className="kpi-card consumption" style={{ position: 'relative' }}>
-            <TrendBadge pct={trends?.trend_consumed_pct} invertColors={false} />
-            <div className="kpi-label"><span>📊</span> Gesamtverbrauch</div>
-            <div className="kpi-value consuming">{totalConsumed.toFixed(1)}<span className="kpi-unit">kWh</span></div>
-            <div className="kpi-detail">Kosten im Zeitraum: {(totalConsumed * price).toFixed(2)} €</div>
-            <div className="kpi-detail" style={{ marginTop: '4px', opacity: 0.7 }}>Jahr-Prognose: {projectedYearlyConsumed.toFixed(0)} kWh</div>
-          </div>
+          <KPICard
+            icon="📊"
+            label="Gesamtverbrauch"
+            value={totalConsumed.toFixed(1)}
+            unit="kWh"
+            variant="consumption"
+            trend={trends?.trend_consumed_pct}
+            trendInvert={false}
+            detail={
+              <>
+                <div>Kosten im Zeitraum: {(totalConsumed * price).toFixed(2)} €</div>
+                <div style={{ marginTop: '4px', opacity: 0.7 }}>Jahr-Prognose: {projectedYearlyConsumed.toFixed(0)} kWh</div>
+              </>
+            }
+          />
           
-          <div className="kpi-card solar" style={{ position: 'relative' }}>
-            <TrendBadge pct={trends?.trend_exported_pct} invertColors={true} />
-            <div className="kpi-label"><span>☀️</span> Gesamteinspeisung</div>
-            <div className="kpi-value feeding">{totalExported.toFixed(1)}<span className="kpi-unit">kWh</span></div>
-            <div className="kpi-detail">
-              {enableFeedin ? `Ersparnis im Zeitraum: ${(totalExported * tariff).toFixed(2)} €` : 'Einspeisevergütung deaktiviert'}
-            </div>
-            <div className="kpi-detail" style={{ marginTop: '4px', opacity: 0.7 }}>Jahr-Prognose: {projectedYearlyExported.toFixed(0)} kWh</div>
-          </div>
+          <KPICard
+            icon="☀️"
+            label="Gesamteinspeisung"
+            value={totalExported.toFixed(1)}
+            unit="kWh"
+            variant="solar"
+            trend={trends?.trend_exported_pct}
+            trendInvert={true}
+            detail={
+              <>
+                <div>{enableFeedin ? `Ersparnis im Zeitraum: ${(totalExported * tariff).toFixed(2)} €` : 'Einspeisevergütung deaktiviert'}</div>
+                <div style={{ marginTop: '4px', opacity: 0.7 }}>Jahr-Prognose: {projectedYearlyExported.toFixed(0)} kWh</div>
+              </>
+            }
+          />
           
-          <div className="kpi-card solar" style={{ position: 'relative', borderTopColor: 'var(--solar)' }}>
-            <TrendBadge pct={trends?.trend_generated_pct} invertColors={true} />
-            <div className="kpi-label"><span>⚡</span> Solar (Roh)</div>
-            <div className="kpi-value" style={{ color: 'var(--solar)' }}>{totalGeneratedRaw.toFixed(1)}<span className="kpi-unit">kWh</span></div>
-            <div className="kpi-detail">
-              + {totalGeneratedEst.toFixed(1)} kWh Geschätzt = {totalGenerated.toFixed(1)} kWh Gesamt
-            </div>
-            <div className="kpi-detail" style={{ marginTop: '4px', opacity: 0.7 }}>Jahr-Prognose: {projectedYearlyGenerated.toFixed(0)} kWh</div>
-          </div>
+          <KPICard
+            icon="⚡"
+            label="Solar (Roh)"
+            value={totalGeneratedRaw.toFixed(1)}
+            unit="kWh"
+            variant="solar"
+            trend={trends?.trend_generated_pct}
+            trendInvert={true}
+            detail={
+              <>
+                <div>+ {totalGeneratedEst.toFixed(1)} kWh Geschätzt = {totalGenerated.toFixed(1)} kWh Gesamt</div>
+                <div style={{ marginTop: '4px', opacity: 0.7 }}>Jahr-Prognose: {projectedYearlyGenerated.toFixed(0)} kWh</div>
+              </>
+            }
+          />
           
-          <div className="kpi-card">
-            <div className="kpi-label"><span>♻️</span> Eigenverbrauch</div>
-            <div className="kpi-value">{Math.max(0, Math.min(100, selfConsumptionPct)).toFixed(1)}<span className="kpi-unit">%</span></div>
-            <div className="kpi-detail">Selbst genutzter Solarstrom</div>
-            <div className="kpi-detail" style={{ marginTop: '4px', opacity: 0.7 }}>
-              {(totalGenerated - totalExported).toFixed(1)} kWh vermiedener Netzbezug
-            </div>
-          </div>
+          <KPICard
+            icon="♻️"
+            label="Eigenverbrauch"
+            value={Math.max(0, Math.min(100, selfConsumptionPct)).toFixed(1)}
+            unit="%"
+            variant="consumption"
+            detail={
+              <>
+                <div>Selbst genutzter Solarstrom</div>
+                <div style={{ marginTop: '4px', opacity: 0.7 }}>{(totalGenerated - totalExported).toFixed(1)} kWh vermiedener Netzbezug</div>
+              </>
+            }
+          />
           
-          <div className="kpi-card">
-            <div className="kpi-label"><span>⚡</span> Leistung</div>
-            <div className="kpi-value">{Math.round(avgPower)}<span className="kpi-unit">W Ø</span></div>
-            <div className="kpi-detail">Spitze: {Math.round(peakPower)} W</div>
-            <div className="kpi-detail" style={{ marginTop: '4px', opacity: 0.7 }}>
-              Standby: {baseLoadW > 0 ? `${Math.round(baseLoadW)} W` : 'Berechne...'}
-            </div>
-          </div>
+          <KPICard
+            icon="⚡"
+            label="Leistung"
+            value={Math.round(avgPower)}
+            unit="W Ø"
+            variant="consumption"
+            detail={
+              <>
+                <div>Spitze: {Math.round(peakPower)} W</div>
+                <div style={{ marginTop: '4px', opacity: 0.7 }}>Standby: {baseLoadW > 0 ? `${Math.round(baseLoadW)} W` : 'Berechne...'}</div>
+              </>
+            }
+          />
           
-          <div className="kpi-card success">
-            <div className="kpi-label"><span>💰</span> {enableFeedin ? 'Netto Kosten' : 'Stromkosten'}</div>
-            <div className="kpi-value">{enableFeedin ? ((totalConsumed * price) - (totalExported * tariff)).toFixed(2) : (totalConsumed * price).toFixed(2)}<span className="kpi-unit">€</span></div>
-            <div className="kpi-detail">{enableFeedin ? 'Bezugskosten minus Einspeisevergütung' : 'Für diesen Zeitraum'}</div>
-            <div className="kpi-detail" style={{ marginTop: '4px', opacity: 0.7 }}>Jahr-Prognose: {projectedYearlyNet.toFixed(0)} €</div>
-          </div>
+          <KPICard
+            icon="💰"
+            label={enableFeedin ? 'Netto Kosten' : 'Stromkosten'}
+            value={enableFeedin ? ((totalConsumed * price) - (totalExported * tariff)).toFixed(2) : (totalConsumed * price).toFixed(2)}
+            unit="€"
+            variant="cost"
+            detail={
+              <>
+                <div>{enableFeedin ? 'Bezugskosten minus Einspeisevergütung' : 'Für diesen Zeitraum'}</div>
+                <div style={{ marginTop: '4px', opacity: 0.7 }}>Jahr-Prognose: {projectedYearlyNet.toFixed(0)} €</div>
+              </>
+            }
+          />
         </div>
 
         {/* Energy Balance Chart */}
