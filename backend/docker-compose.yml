@@ -61,7 +61,7 @@ services:
       MQTT_HOST: ${MQTT_HOST:?MQTT_HOST is required}
       MQTT_USER: ${MQTT_USER:-bitshake}
       MQTT_PASSWORD: ${MQTT_PASSWORD:?MQTT_PASSWORD is required}
-      MQTT_TOPIC: ${MQTT_TOPIC:-tele/+/SENSOR}
+      MQTT_TOPIC: ${MQTT_TOPIC:-tele/+/SENSOR,hm2mqtt/+/device/+/data}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
     depends_on:

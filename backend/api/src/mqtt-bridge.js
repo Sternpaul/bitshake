@@ -106,8 +106,15 @@ async function processReading(payload, topic) {
       // Combine pv1Power and pv2Power if they exist
       const pv1 = parseFloat(payload.pv1Power || 0);
       const pv2 = parseFloat(payload.pv2Power || 0);
-      const totalSolarPower = pv1 + pv2;
-      const dailyEnergy = parseFloat(payload.dailyEnergyGenerated || 0);
+      
+      // The user has 800W of panels connected to Marstek, and 650W of extra panels.
+      // Total capacity = 1450W. We extrapolate the total generation based on the 800W array's output.
+      const multiplier = 1450 / 800; // 1.8125
+      const measuredSolarPower = pv1 + pv2;
+      const totalSolarPower = Math.round(measuredSolarPower * multiplier);
+      
+      const measuredDaily = parseFloat(payload.dailyEnergyGenerated || 0);
+      const dailyEnergy = Number((measuredDaily * multiplier).toFixed(3));
       
       // We insert a row with JUST the solar data. The grid data will be null.
       // TimescaleDB allows us to coalesce or aggregate these smoothly over time.
