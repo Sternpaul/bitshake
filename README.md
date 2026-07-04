@@ -72,6 +72,11 @@ Electricity Meter ──(IR)──> Bitshake Air (Tasmota)
 - **Cost Calculations** — Net cost for any time range
 
 ### Settings
+- **Solar Curve Configuration** — 6 interactive sliders to fully configure the Gaussian model for your East (measured) and South (extrapolated) panels:
+  - Configure theoretical maximum Capacity (W).
+  - Configure Solar Peak Time (Hour).
+  - Configure Curve Width (Spread).
+  - Changes are applied instantly to the math engine without needing a restart!
 - **Electricity Price** — Configurable (default: €0.35/kWh)
 - **Feed-in Tariff** — Configurable (Einspeisevergütung)
 - **Currency** — EUR, USD, GBP, CHF
