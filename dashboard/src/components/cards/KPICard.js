@@ -23,8 +23,8 @@ export default function KPICard({ icon, label, value, unit, detail, variant = 'c
     const trendIcon = isNeutral ? '👉' : isPositive ? '📈' : '📉';
     const sign = isPositive ? '+' : '';
     
-    const trendColor = isNeutral ? 'var(--text-secondary)' : isGood ? 'var(--success)' : 'var(--error)';
-    const trendBg = isNeutral ? 'var(--surface-sunken)' : isGood ? 'var(--success-bg)' : 'var(--error-bg)';
+    const trendColor = isNeutral ? 'var(--text-secondary)' : isGood ? 'var(--success)' : 'var(--danger)';
+    const trendBg = isNeutral ? 'var(--surface-sunken)' : isGood ? 'var(--success-bg)' : 'var(--danger-bg)';
 
     sleekTrend = (
       <span style={{
