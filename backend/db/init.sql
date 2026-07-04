@@ -47,12 +47,8 @@ INSERT INTO settings (key, value) VALUES
     ('currency', 'EUR'),
     ('dashboard_refresh_seconds', '10'),
     ('enable_solar_estimation', 'true'),
-    ('solar_east_capacity', '800'),
-    ('solar_south_capacity', '650'),
-    ('solar_east_peak_hour', '9.5'),
-    ('solar_south_peak_hour', '12.5'),
-    ('solar_east_curve_width', '3.0'),
-    ('solar_south_curve_width', '3.0')
+    ('solar_reference_array', '{"capacity": 800, "peakHour": 9.5, "curveWidth": 3.0}'),
+    ('solar_virtual_arrays', '[{"id": "default-south", "name": "Süd-Ausrichtung", "capacity": 650, "peakHour": 12.5, "curveWidth": 3.0}]')
 ON CONFLICT (key) DO NOTHING;
 
 -- ============================================================

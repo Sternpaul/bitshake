@@ -22,12 +22,29 @@ function SettingsContent() {
   const [refreshInterval, setRefreshInterval] = useState('10');
 
   // Solar Curve settings
-  const [solarEastCapacity, setSolarEastCapacity] = useState('800');
-  const [solarSouthCapacity, setSolarSouthCapacity] = useState('650');
-  const [solarEastPeakHour, setSolarEastPeakHour] = useState('9.5');
-  const [solarSouthPeakHour, setSolarSouthPeakHour] = useState('12.5');
-  const [solarEastCurveWidth, setSolarEastCurveWidth] = useState('3.0');
-  const [solarSouthCurveWidth, setSolarSouthCurveWidth] = useState('3.0');
+  const [solarReferenceArray, setSolarReferenceArray] = useState({ capacity: 800, peakHour: 9.5, curveWidth: 3.0 });
+  const [solarVirtualArrays, setSolarVirtualArrays] = useState([]);
+  const [showAdvancedSolar, setShowAdvancedSolar] = useState(false);
+
+  const addVirtualArray = () => {
+    setSolarVirtualArrays([...solarVirtualArrays, {
+      id: 'virtual-' + Date.now(),
+      name: 'Neue Ausrichtung',
+      capacity: 600,
+      peakHour: 12,
+      curveWidth: 3.0
+    }]);
+  };
+
+  const updateVirtualArray = (id, field, value) => {
+    setSolarVirtualArrays(solarVirtualArrays.map(arr => 
+      arr.id === id ? { ...arr, [field]: field === 'name' ? value : Number(value) } : arr
+    ));
+  };
+
+  const removeVirtualArray = (id) => {
+    setSolarVirtualArrays(solarVirtualArrays.filter(arr => arr.id !== id));
+  };
 
   // Password change
   const [currentPassword, setCurrentPassword] = useState('');
@@ -69,12 +86,12 @@ function SettingsContent() {
         if (s.currency) setCurrency(s.currency.value);
         if (s.dashboard_refresh_seconds) setRefreshInterval(s.dashboard_refresh_seconds.value);
         
-        if (s.solar_east_capacity) setSolarEastCapacity(s.solar_east_capacity.value);
-        if (s.solar_south_capacity) setSolarSouthCapacity(s.solar_south_capacity.value);
-        if (s.solar_east_peak_hour) setSolarEastPeakHour(s.solar_east_peak_hour.value);
-        if (s.solar_south_peak_hour) setSolarSouthPeakHour(s.solar_south_peak_hour.value);
-        if (s.solar_east_curve_width) setSolarEastCurveWidth(s.solar_east_curve_width.value);
-        if (s.solar_south_curve_width) setSolarSouthCurveWidth(s.solar_south_curve_width.value);
+        if (s.solar_reference_array) {
+          try { setSolarReferenceArray(JSON.parse(s.solar_reference_array.value)); } catch(e) {}
+        }
+        if (s.solar_virtual_arrays) {
+          try { setSolarVirtualArrays(JSON.parse(s.solar_virtual_arrays.value)); } catch(e) {}
+        }
       } catch (err) {
         console.error('Failed to load settings:', err);
       } finally {
@@ -108,12 +125,8 @@ function SettingsContent() {
         feedin_tariff: feedinTariff,
         currency,
         dashboard_refresh_seconds: refreshInterval,
-        solar_east_capacity: solarEastCapacity,
-        solar_south_capacity: solarSouthCapacity,
-        solar_east_peak_hour: solarEastPeakHour,
-        solar_south_peak_hour: solarSouthPeakHour,
-        solar_east_curve_width: solarEastCurveWidth,
-        solar_south_curve_width: solarSouthCurveWidth,
+        solar_reference_array: JSON.stringify(solarReferenceArray),
+        solar_virtual_arrays: JSON.stringify(solarVirtualArrays),
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -255,67 +268,104 @@ function SettingsContent() {
           <div className="settings-card" style={{ gridColumn: '1 / -1' }}>
             <div className="settings-card-title">☀️ Solar-Kurve (Gaußsches Modell)</div>
             <div className="form-hint" style={{ marginBottom: 'var(--space-6)' }}>
-              Passen Sie das Gauß-Modell an, um die Erzeugung Ihrer nicht-messbaren Solarpaneele realistisch zu schätzen.
+              Fügen Sie virtuelle Solarpaneele hinzu. Die Leistung dieser Arrays wird anhand des Referenz-Arrays geschätzt.
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-6)' }}>
-              {/* East Panels */}
-              <div style={{ padding: 'var(--space-4)', background: 'var(--surface-sunken)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
-                <h3 style={{ fontSize: '1rem', marginBottom: 'var(--space-4)', color: 'var(--solar)' }}>Ost-Ausrichtung (Gemessen)</h3>
-                
-                <div className="form-group">
-                  <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Kapazität (W)</span>
-                    <span style={{ fontWeight: 'bold' }}>{solarEastCapacity} W</span>
-                  </label>
-                  <input type="range" min="0" max="3000" step="10" value={solarEastCapacity} onChange={e => setSolarEastCapacity(e.target.value)} style={{ width: '100%', accentColor: 'var(--solar)' }} />
+              {solarVirtualArrays.map((arr) => (
+                <div key={arr.id} style={{ padding: 'var(--space-4)', background: 'var(--surface-sunken)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', position: 'relative' }}>
+                  <button 
+                    onClick={() => removeVirtualArray(arr.id)}
+                    style={{ position: 'absolute', top: '10px', right: '10px', background: 'transparent', border: 'none', color: 'var(--error)', cursor: 'pointer', fontSize: '1.2rem' }}
+                    title="Entfernen"
+                  >
+                    ×
+                  </button>
+                  <div className="form-group" style={{ marginBottom: 'var(--space-4)' }}>
+                    <input 
+                      type="text" 
+                      value={arr.name} 
+                      onChange={e => updateVirtualArray(arr.id, 'name', e.target.value)}
+                      style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'hsl(38, 92%, 70%)', background: 'transparent', border: 'none', borderBottom: '1px solid var(--border)', width: '90%', paddingBottom: '4px' }}
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Kapazität (W)</span>
+                      <span style={{ fontWeight: 'bold' }}>{arr.capacity} W</span>
+                    </label>
+                    <input type="range" min="0" max="3000" step="10" value={arr.capacity} onChange={e => updateVirtualArray(arr.id, 'capacity', e.target.value)} style={{ width: '100%', accentColor: 'hsl(38, 92%, 70%)' }} />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Sonnenhöchststand (Uhrzeit)</span>
+                      <span style={{ fontWeight: 'bold' }}>{Math.floor(arr.peakHour)}:{String(Math.round((arr.peakHour % 1) * 60)).padStart(2, '0')}</span>
+                    </label>
+                    <input type="range" min="0" max="24" step="0.5" value={arr.peakHour} onChange={e => updateVirtualArray(arr.id, 'peakHour', e.target.value)} style={{ width: '100%', accentColor: 'hsl(38, 92%, 70%)' }} />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Kurvenbreite (Stunden)</span>
+                      <span style={{ fontWeight: 'bold' }}>{arr.curveWidth} h</span>
+                    </label>
+                    <input type="range" min="0.5" max="8" step="0.1" value={arr.curveWidth} onChange={e => updateVirtualArray(arr.id, 'curveWidth', e.target.value)} style={{ width: '100%', accentColor: 'hsl(38, 92%, 70%)' }} />
+                  </div>
                 </div>
-                
-                <div className="form-group">
-                  <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Sonnenhöchststand (Uhrzeit)</span>
-                    <span style={{ fontWeight: 'bold' }}>{Math.floor(solarEastPeakHour)}:{String(Math.round((solarEastPeakHour % 1) * 60)).padStart(2, '0')}</span>
-                  </label>
-                  <input type="range" min="0" max="24" step="0.5" value={solarEastPeakHour} onChange={e => setSolarEastPeakHour(e.target.value)} style={{ width: '100%', accentColor: 'var(--solar)' }} />
-                </div>
-                
-                <div className="form-group">
-                  <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Kurvenbreite (Stunden)</span>
-                    <span style={{ fontWeight: 'bold' }}>{solarEastCurveWidth} h</span>
-                  </label>
-                  <input type="range" min="0.5" max="8" step="0.1" value={solarEastCurveWidth} onChange={e => setSolarEastCurveWidth(e.target.value)} style={{ width: '100%', accentColor: 'var(--solar)' }} />
-                </div>
+              ))}
+              
+              <div 
+                onClick={addVirtualArray}
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-4)', background: 'transparent', borderRadius: 'var(--radius-md)', border: '2px dashed var(--border)', cursor: 'pointer', color: 'var(--text-secondary)', minHeight: '200px' }}
+              >
+                <span style={{ fontSize: '2rem', marginBottom: '8px' }}>+</span>
+                <span>Weiteres Array hinzufügen</span>
               </div>
+            </div>
 
-              {/* South Panels */}
-              <div style={{ padding: 'var(--space-4)', background: 'var(--surface-sunken)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
-                <h3 style={{ fontSize: '1rem', marginBottom: 'var(--space-4)', color: 'hsl(38, 92%, 70%)' }}>Süd-Ausrichtung (Geschätzt)</h3>
-                
-                <div className="form-group">
-                  <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Kapazität (W)</span>
-                    <span style={{ fontWeight: 'bold' }}>{solarSouthCapacity} W</span>
-                  </label>
-                  <input type="range" min="0" max="3000" step="10" value={solarSouthCapacity} onChange={e => setSolarSouthCapacity(e.target.value)} style={{ width: '100%', accentColor: 'hsl(38, 92%, 70%)' }} />
+            {/* Advanced Settings Accordion for Measured Array */}
+            <div style={{ marginTop: 'var(--space-6)', borderTop: '1px solid var(--border)', paddingTop: 'var(--space-4)' }}>
+              <button 
+                onClick={() => setShowAdvancedSolar(!showAdvancedSolar)}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}
+              >
+                {showAdvancedSolar ? '▼' : '▶'} Erweitert: Parameter des Haupt-Arrays (Gemessen)
+              </button>
+              
+              {showAdvancedSolar && (
+                <div style={{ padding: 'var(--space-4)', background: 'var(--surface-sunken)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', marginTop: 'var(--space-4)' }}>
+                  <div className="form-hint" style={{ marginBottom: 'var(--space-4)' }}>
+                    Diese Parameter definieren das Referenz-Array, das an den Wechselrichter angeschlossen ist. Die Mathematik benötigt diese Werte, um die virtuellen Arrays korrekt zu berechnen.
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-4)' }}>
+                    <div className="form-group">
+                      <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Kapazität (W)</span>
+                        <span style={{ fontWeight: 'bold' }}>{solarReferenceArray.capacity} W</span>
+                      </label>
+                      <input type="range" min="0" max="3000" step="10" value={solarReferenceArray.capacity} onChange={e => setSolarReferenceArray({...solarReferenceArray, capacity: Number(e.target.value)})} style={{ width: '100%', accentColor: 'var(--solar)' }} />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Höchststand</span>
+                        <span style={{ fontWeight: 'bold' }}>{Math.floor(solarReferenceArray.peakHour)}:{String(Math.round((solarReferenceArray.peakHour % 1) * 60)).padStart(2, '0')}</span>
+                      </label>
+                      <input type="range" min="0" max="24" step="0.5" value={solarReferenceArray.peakHour} onChange={e => setSolarReferenceArray({...solarReferenceArray, peakHour: Number(e.target.value)})} style={{ width: '100%', accentColor: 'var(--solar)' }} />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Kurvenbreite</span>
+                        <span style={{ fontWeight: 'bold' }}>{solarReferenceArray.curveWidth} h</span>
+                      </label>
+                      <input type="range" min="0.5" max="8" step="0.1" value={solarReferenceArray.curveWidth} onChange={e => setSolarReferenceArray({...solarReferenceArray, curveWidth: Number(e.target.value)})} style={{ width: '100%', accentColor: 'var(--solar)' }} />
+                    </div>
+                  </div>
                 </div>
-                
-                <div className="form-group">
-                  <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Sonnenhöchststand (Uhrzeit)</span>
-                    <span style={{ fontWeight: 'bold' }}>{Math.floor(solarSouthPeakHour)}:{String(Math.round((solarSouthPeakHour % 1) * 60)).padStart(2, '0')}</span>
-                  </label>
-                  <input type="range" min="0" max="24" step="0.5" value={solarSouthPeakHour} onChange={e => setSolarSouthPeakHour(e.target.value)} style={{ width: '100%', accentColor: 'hsl(38, 92%, 70%)' }} />
-                </div>
-                
-                <div className="form-group">
-                  <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Kurvenbreite (Stunden)</span>
-                    <span style={{ fontWeight: 'bold' }}>{solarSouthCurveWidth} h</span>
-                  </label>
-                  <input type="range" min="0.5" max="8" step="0.1" value={solarSouthCurveWidth} onChange={e => setSolarSouthCurveWidth(e.target.value)} style={{ width: '100%', accentColor: 'hsl(38, 92%, 70%)' }} />
-                </div>
-              </div>
+              )}
             </div>
           </div>
 

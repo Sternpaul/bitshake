@@ -29,32 +29,26 @@ let lastSolarData = {
 };
 
 // Solar curve parameters
-let curveSettings = {
-  eastCapacity: 800,
-  southCapacity: 650,
-  eastPeakHour: 9.5,
-  southPeakHour: 12.5,
-  eastCurveWidth: 3.0,
-  southCurveWidth: 3.0
-};
+let referenceArray = { capacity: 800, peakHour: 9.5, curveWidth: 3.0 };
+let virtualArrays = [
+  { id: 'default-south', name: 'Süd-Ausrichtung', capacity: 650, peakHour: 12.5, curveWidth: 3.0 }
+];
 
 export async function loadSolarSettings() {
   try {
-    const res = await query("SELECT key, value FROM settings WHERE key LIKE 'solar_%'");
+    const res = await query("SELECT key, value FROM settings WHERE key IN ('solar_reference_array', 'solar_virtual_arrays')");
     for (const row of res.rows) {
-      const val = parseFloat(row.value);
-      if (isNaN(val)) continue;
-      
-      switch(row.key) {
-        case 'solar_east_capacity': curveSettings.eastCapacity = val; break;
-        case 'solar_south_capacity': curveSettings.southCapacity = val; break;
-        case 'solar_east_peak_hour': curveSettings.eastPeakHour = val; break;
-        case 'solar_south_peak_hour': curveSettings.southPeakHour = val; break;
-        case 'solar_east_curve_width': curveSettings.eastCurveWidth = val; break;
-        case 'solar_south_curve_width': curveSettings.southCurveWidth = val; break;
+      if (row.key === 'solar_reference_array') {
+        try {
+          referenceArray = JSON.parse(row.value);
+        } catch (e) { console.error('Failed to parse solar_reference_array', e); }
+      } else if (row.key === 'solar_virtual_arrays') {
+        try {
+          virtualArrays = JSON.parse(row.value);
+        } catch (e) { console.error('Failed to parse solar_virtual_arrays', e); }
       }
     }
-    console.log('[MQTT] Loaded dynamic solar curve settings:', curveSettings);
+    console.log('[MQTT] Loaded dynamic solar array configuration');
   } catch (err) {
     console.error('[MQTT] Failed to load solar settings:', err);
   }
@@ -148,21 +142,30 @@ async function processReading(payload, topic) {
       const pv2 = parseFloat(payload.pv2Power || 0);
       const measuredEast = pv1 + pv2; // Raw solid output
       
-      // Calculate Gaussian extrapolation for South panels
+      // Calculate Gaussian extrapolation for all Virtual arrays based on the Reference array
       const now = new Date();
       const hour = now.getUTCHours() + (now.getUTCMinutes() / 60);
       
-      const { eastCapacity, southCapacity, eastPeakHour, southPeakHour, eastCurveWidth, southCurveWidth } = curveSettings;
+      const theoRef = referenceArray.capacity * Math.exp(-0.5 * Math.pow((hour - referenceArray.peakHour) / referenceArray.curveWidth, 2));
       
-      const theoEast = eastCapacity * Math.exp(-0.5 * Math.pow((hour - eastPeakHour) / eastCurveWidth, 2));
-      const theoSouth = southCapacity * Math.exp(-0.5 * Math.pow((hour - southPeakHour) / southCurveWidth, 2));
-      
-      const ratio = theoEast > 50 ? (theoSouth / theoEast) : 0;
-      const estimatedSouth = Math.min(measuredEast * ratio, southCapacity);
-      
+      let totalVirtualCapacity = 0;
+      let totalEstimatedPower = 0;
+
+      if (theoRef > 50) { // Only calculate ratio if reference panel is theoretically active
+        for (const vArray of virtualArrays) {
+          totalVirtualCapacity += vArray.capacity;
+          const theoVirtual = vArray.capacity * Math.exp(-0.5 * Math.pow((hour - vArray.peakHour) / vArray.curveWidth, 2));
+          const ratio = theoVirtual / theoRef;
+          
+          // Estimate this specific virtual array and clamp to its max capacity
+          const estimatedVirtual = Math.min(measuredEast * ratio, vArray.capacity);
+          totalEstimatedPower += estimatedVirtual;
+        }
+      }
+
       // We explicitly separate Raw vs Estimated
-      const estimatedPower = Math.round(estimatedSouth);
-      const capacityMultiplier = (eastCapacity + southCapacity) / eastCapacity; // Total capacity ratio
+      const estimatedPower = Math.round(totalEstimatedPower);
+      const capacityMultiplier = (referenceArray.capacity + totalVirtualCapacity) / referenceArray.capacity; // Total capacity ratio
       
       const measuredDaily = parseFloat(payload.dailyEnergyGenerated || 0);
       const measuredMonthly = parseFloat(payload.monthlyEnergyGenerated || 0);
