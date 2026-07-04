@@ -1,4 +1,4 @@
-import { query } from './src/db.js';
+import { query } from './db.js';
 
 async function fixDb() {
   console.log('Fixing 0 drops in meter_readings...');

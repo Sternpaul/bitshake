@@ -1,4 +1,4 @@
-import { query } from './src/db.js';
+import { query } from './db.js';
 
 async function restoreDb() {
   console.log('Restoring solar data for today using daily generation counters...');
