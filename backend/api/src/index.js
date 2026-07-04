@@ -96,6 +96,8 @@ const start = async () => {
     try {
       const { query } = await import('./db.js');
       const migrationSql = `
+        ALTER TABLE meter_readings ADD COLUMN IF NOT EXISTS solar_power DOUBLE PRECISION;
+        ALTER TABLE meter_readings ADD COLUMN IF NOT EXISTS solar_energy_daily DOUBLE PRECISION;
         ALTER TABLE meter_readings ADD COLUMN IF NOT EXISTS solar_energy_total DOUBLE PRECISION;
         DROP MATERIALIZED VIEW IF EXISTS hourly_energy CASCADE;
         DROP MATERIALIZED VIEW IF EXISTS daily_energy CASCADE;
