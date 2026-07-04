@@ -38,12 +38,13 @@ export default async function settingsRoutes(fastify) {
           feedin_tariff: { type: 'string', pattern: '^\\d+(\\.\\d+)?$' },
           currency: { type: 'string', enum: ['EUR', 'USD', 'GBP', 'CHF'] },
           dashboard_refresh_seconds: { type: 'string', pattern: '^\\d+$' },
+          enable_solar_estimation: { type: 'string', enum: ['true', 'false'] },
         },
       },
     },
   }, async (request, reply) => {
     const updates = request.body;
-    const allowedKeys = ['electricity_price', 'enable_feedin_tariff', 'feedin_tariff', 'currency', 'dashboard_refresh_seconds'];
+    const allowedKeys = ['electricity_price', 'enable_feedin_tariff', 'feedin_tariff', 'currency', 'dashboard_refresh_seconds', 'enable_solar_estimation'];
 
     try {
       const results = {};
@@ -79,6 +80,16 @@ export default async function settingsRoutes(fastify) {
           [key, value]
         );
         results[key] = value;
+      }
+      
+      // Update mqtt-bridge state if estimation changed
+      if (updates.enable_solar_estimation) {
+        try {
+          const { setSolarEstimation } = await import('../mqtt-bridge.js');
+          setSolarEstimation(updates.enable_solar_estimation === 'true');
+        } catch(e) {
+          // ignore error if not loaded
+        }
       }
 
       return reply.send({ message: 'Settings updated', data: results });

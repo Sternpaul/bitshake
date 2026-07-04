@@ -12,6 +12,12 @@ let lastReading = null;
 let lastRawPayloadGrid = null;
 let lastRawPayloadSolar = null;
 let messageCount = 0;
+let enableSolarEstimation = true;
+
+export function setSolarEstimation(enabled) {
+  enableSolarEstimation = enabled;
+  console.log(`[MQTT] Solar estimation set to: ${enabled}`);
+}
 
 /**
  * Start the MQTT bridge — subscribes to Tasmota sensor topics
@@ -111,29 +117,31 @@ async function processReading(payload, topic) {
       // Combine pv1Power and pv2Power if they exist
       const pv1 = parseFloat(payload.pv1Power || 0);
       const pv2 = parseFloat(payload.pv2Power || 0);
-      
-      // We have 800W East (vertical) measured via Marstek, and 650W South (35 deg, shaded late PM) unmeasured.
-      // We use a Gaussian time-of-day model to estimate the 650W panels based on the East panels.
-      const hour = time.getHours() + time.getMinutes() / 60;
-      
-      // East peaks at 9:30 AM, South peaks at 12:30 PM
-      const theoEast = 800 * Math.exp(-0.5 * Math.pow((hour - 9.5) / 3.0, 2));
-      const theoSouth = 650 * Math.exp(-0.5 * Math.pow((hour - 12.5) / 3.0, 2));
-      
-      // Prevent division by zero
-      const safeTheoEast = Math.max(theoEast, 50); 
-      
-      // Ratio of expected South to expected East (capped at 4x)
-      const ratio = Math.min(theoSouth / safeTheoEast, 4.0);
-      
       const measuredEast = pv1 + pv2;
-      const estimatedSouth = Math.min(measuredEast * ratio, 650);
-      const totalSolarPower = Math.round(measuredEast + estimatedSouth);
       
-      // The measured daily/total is extrapolated using the instantaneous ratio
-      // (This isn't perfect for totals, but it's the best guess without an integral over the day)
-      // A better total extrapolation factor is simply total capacity ratio = 1450 / 800 = 1.8125
-      const capacityMultiplier = 1450 / 800;
+      let totalSolarPower = measuredEast;
+      let capacityMultiplier = 1.0;
+      
+      if (enableSolarEstimation) {
+        // We use a Gaussian time-of-day model to estimate the 650W panels based on the East panels.
+        const hour = time.getHours() + time.getMinutes() / 60;
+        
+        // East peaks at 9:30 AM, South peaks at 12:30 PM
+        const theoEast = 800 * Math.exp(-0.5 * Math.pow((hour - 9.5) / 3.0, 2));
+        const theoSouth = 650 * Math.exp(-0.5 * Math.pow((hour - 12.5) / 3.0, 2));
+        
+        // Prevent division by zero
+        const safeTheoEast = Math.max(theoEast, 50); 
+        
+        // Ratio of expected South to expected East (capped at 4x)
+        const ratio = Math.min(theoSouth / safeTheoEast, 4.0);
+        
+        const estimatedSouth = Math.min(measuredEast * ratio, 650);
+        totalSolarPower = Math.round(measuredEast + estimatedSouth);
+        
+        // The total extrapolation factor is total capacity ratio = 1450 / 800 = 1.8125
+        capacityMultiplier = 1450 / 800;
+      }
       
       const measuredDaily = parseFloat(payload.dailyEnergyGenerated || 0);
       const dailyEnergy = Number((measuredDaily * capacityMultiplier).toFixed(3));
@@ -241,7 +249,17 @@ export function getMqttStatus() {
  */
 export function stopMqttBridge() {
   if (client) {
-    client.end(true);
-    console.log('[MQTT] Bridge stopped');
+    client.end();
+  }
+}
+
+async function loadInitialSettings() {
+  try {
+    const res = await query("SELECT value FROM settings WHERE key = 'enable_solar_estimation'");
+    if (res.rows.length > 0) {
+      setSolarEstimation(res.rows[0].value === 'true');
+    }
+  } catch (err) {
+    console.error('[MQTT] Failed to load initial settings:', err);
   }
 }

@@ -41,7 +41,8 @@ INSERT INTO settings (key, value) VALUES
     ('enable_feedin_tariff', 'false'),
     ('feedin_tariff', '0.00'),
     ('currency', 'EUR'),
-    ('dashboard_refresh_seconds', '10')
+    ('dashboard_refresh_seconds', '10'),
+    ('enable_solar_estimation', 'true')
 ON CONFLICT (key) DO NOTHING;
 
 -- ============================================================

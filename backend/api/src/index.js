@@ -95,12 +95,27 @@ const start = async () => {
     // Run migration
     try {
       const { query } = await import('./db.js');
-      const migrationSql = fs.readFileSync(path.join(process.cwd(), '../db/add_solar_total.sql'), 'utf8');
+      const migrationSql = `
+        ALTER TABLE meter_readings ADD COLUMN IF NOT EXISTS solar_energy_total DOUBLE PRECISION;
+        DROP MATERIALIZED VIEW IF EXISTS hourly_energy CASCADE;
+        DROP MATERIALIZED VIEW IF EXISTS daily_energy CASCADE;
+        
+        CREATE MATERIALIZED VIEW IF NOT EXISTS hourly_energy WITH (timescaledb.continuous) AS
+        SELECT time_bucket('1 hour', time) AS bucket, AVG(power_current) AS avg_power, MAX(power_current) AS max_power, MIN(power_current) AS min_power, LAST(total_import, time) - FIRST(total_import, time) AS consumed_kwh, LAST(total_export, time) - FIRST(total_export, time) AS exported_kwh, LAST(solar_energy_total, time) - FIRST(solar_energy_total, time) AS generated_kwh, COUNT(*) AS sample_count
+        FROM meter_readings GROUP BY bucket WITH NO DATA;
+        
+        CREATE MATERIALIZED VIEW IF NOT EXISTS daily_energy WITH (timescaledb.continuous) AS
+        SELECT time_bucket('1 day', time) AS bucket, AVG(power_current) AS avg_power, MAX(power_current) AS max_power, MIN(power_current) AS min_power, LAST(total_import, time) - FIRST(total_import, time) AS consumed_kwh, LAST(total_export, time) - FIRST(total_export, time) AS exported_kwh, LAST(solar_energy_total, time) - FIRST(solar_energy_total, time) AS generated_kwh, COUNT(*) AS sample_count
+        FROM meter_readings GROUP BY bucket WITH NO DATA;
+        
+        SELECT add_continuous_aggregate_policy('hourly_energy', start_offset => INTERVAL '3 hours', end_offset => INTERVAL '1 hour', schedule_interval => INTERVAL '1 hour', if_not_exists => TRUE);
+        SELECT add_continuous_aggregate_policy('daily_energy', start_offset => INTERVAL '3 days', end_offset => INTERVAL '1 day', schedule_interval => INTERVAL '1 day', if_not_exists => TRUE);
+      `;
       console.log('[DB] Running solar migration script...');
       await query(migrationSql);
       console.log('[DB] Solar migration complete.');
     } catch (e) {
-      console.warn('[DB] Migration failed (it may have already run or file missing):', e.message);
+      console.warn('[DB] Migration failed (it may have already run):', e.message);
     }
 
     // Start HTTP server
