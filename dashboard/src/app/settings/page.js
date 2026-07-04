@@ -20,7 +20,6 @@ function SettingsContent() {
   const [feedinTariff, setFeedinTariff] = useState('0.00');
   const [currency, setCurrency] = useState('EUR');
   const [refreshInterval, setRefreshInterval] = useState('10');
-  const [enableSolarEstimation, setEnableSolarEstimation] = useState(true);
 
   // Password change
   const [currentPassword, setCurrentPassword] = useState('');
@@ -61,7 +60,6 @@ function SettingsContent() {
         if (s.feedin_tariff) setFeedinTariff(s.feedin_tariff.value);
         if (s.currency) setCurrency(s.currency.value);
         if (s.dashboard_refresh_seconds) setRefreshInterval(s.dashboard_refresh_seconds.value);
-        if (s.enable_solar_estimation) setEnableSolarEstimation(s.enable_solar_estimation.value === 'true');
       } catch (err) {
         console.error('Failed to load settings:', err);
       } finally {
@@ -95,7 +93,6 @@ function SettingsContent() {
         feedin_tariff: feedinTariff,
         currency,
         dashboard_refresh_seconds: refreshInterval,
-        enable_solar_estimation: enableSolarEstimation ? 'true' : 'false',
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -288,27 +285,6 @@ function SettingsContent() {
               </div>
               <div className="form-hint" style={{ marginTop: 'var(--space-2)' }}>
                 Exportieren Sie Rohdaten als CSV für den ausgewählten Zeitraum
-              </div>
-            </div>
-          </div>
-          
-          {/* Solar Settings */}
-          <div className="settings-card">
-            <div className="settings-card-title">☀️ Solar-Einstellungen</div>
-
-            <div className="form-group">
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={enableSolarEstimation}
-                  onChange={(e) => setEnableSolarEstimation(e.target.checked)}
-                  style={{ width: '1.2rem', height: '1.2rem', accentColor: 'var(--solar)' }}
-                />
-                Erzeugungsschätzung (Gaußsches Modell) aktivieren
-              </label>
-              <div className="form-hint" style={{ marginTop: 'var(--space-1)' }}>
-                Aktivieren Sie dies, um die nicht gemessenen 650W Süd-Panels basierend auf den gemessenen 800W Ost-Panels hochzurechnen.
-                Wenn deaktiviert, werden nur die echten, live gemessenen Marstek-Daten angezeigt.
               </div>
             </div>
           </div>

@@ -34,6 +34,8 @@ export default function MonthlyTrendChart({ data = [], loading }) {
     date: new Date(d.bucket).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }),
     consumed: Number(d.consumed_kwh || 0),
     exported: Number(d.exported_kwh || 0),
+    generated: Number(d.generated_kwh || 0),
+    generated_estimated: Number(d.generated_estimated_kwh || 0),
   }));
 
   const showDots = formattedData.length <= 5;
@@ -54,6 +56,14 @@ export default function MonthlyTrendChart({ data = [], loading }) {
                 <stop offset="5%" stopColor="hsl(38, 92%, 55%)" stopOpacity={0.2} />
                 <stop offset="95%" stopColor="hsl(38, 92%, 55%)" stopOpacity={0} />
               </linearGradient>
+              <linearGradient id="monthSolar" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="hsl(38, 92%, 55%)" stopOpacity={0.7} />
+                <stop offset="95%" stopColor="hsl(38, 92%, 55%)" stopOpacity={0.2} />
+              </linearGradient>
+              <pattern id="striped-month" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                <rect width="4" height="8" fill="hsl(38, 92%, 70%)" fillOpacity="0.4" />
+                <rect x="4" width="4" height="8" fill="transparent" />
+              </pattern>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
             <XAxis
@@ -88,6 +98,27 @@ export default function MonthlyTrendChart({ data = [], loading }) {
               strokeWidth={2}
               dot={showDots ? { r: 3, fill: 'var(--bg-card)' } : false}
               activeDot={{ r: 5 }}
+            />
+            <Area
+              type="monotone"
+              dataKey="generated"
+              name="Solarstrom (Roh)"
+              stroke="hsl(38, 92%, 55%)"
+              fill="url(#monthSolar)"
+              strokeWidth={2}
+              stackId="solar"
+              dot={false}
+            />
+            <Area
+              type="monotone"
+              dataKey="generated_estimated"
+              name="Solarstrom (Geschätzt)"
+              stroke="hsl(38, 92%, 70%)"
+              strokeDasharray="4 4"
+              fill="url(#striped-month)"
+              strokeWidth={1.5}
+              stackId="solar"
+              dot={false}
             />
           </AreaChart>
         </ResponsiveContainer>

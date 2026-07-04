@@ -87,13 +87,16 @@ function AnalyticsContent() {
     consumed: Number(d.consumed_kwh || 0),
     exported: Number(d.exported_kwh || 0),
     generated: Number(d.generated_kwh || 0),
+    generated_estimated: Number(d.generated_estimated_kwh || 0),
     avg_power: Number(d.avg_power || 0),
     max_power: Number(d.max_power || 0),
   }));
 
   const totalConsumed = chartData.reduce((sum, d) => sum + d.consumed, 0);
   const totalExported = chartData.reduce((sum, d) => sum + d.exported, 0);
-  const totalGenerated = chartData.reduce((sum, d) => sum + d.generated, 0);
+  const totalGeneratedRaw = chartData.reduce((sum, d) => sum + d.generated, 0);
+  const totalGeneratedEst = chartData.reduce((sum, d) => sum + d.generated_estimated, 0);
+  const totalGenerated = totalGeneratedRaw + totalGeneratedEst;
   const selfConsumptionPct = totalGenerated > 0 ? ((totalGenerated - totalExported) / totalGenerated) * 100 : 0;
   
   const avgPower = chartData.length > 0 ? chartData.reduce((sum, d) => sum + d.avg_power, 0) / chartData.length : 0;
@@ -213,9 +216,11 @@ function AnalyticsContent() {
           
           <div className="kpi-card solar" style={{ position: 'relative', borderTopColor: 'var(--solar)' }}>
             <TrendBadge pct={trends?.trend_generated_pct} invertColors={true} />
-            <div className="kpi-label"><span>⚡</span> Solarproduktion</div>
-            <div className="kpi-value" style={{ color: 'var(--solar)' }}>{totalGenerated.toFixed(1)}<span className="kpi-unit">kWh</span></div>
-            <div className="kpi-detail">Geschätzte Erzeugung</div>
+            <div className="kpi-label"><span>⚡</span> Solar (Roh)</div>
+            <div className="kpi-value" style={{ color: 'var(--solar)' }}>{totalGeneratedRaw.toFixed(1)}<span className="kpi-unit">kWh</span></div>
+            <div className="kpi-detail">
+              + {totalGeneratedEst.toFixed(1)} kWh Geschätzt = {totalGenerated.toFixed(1)} kWh Gesamt
+            </div>
             <div className="kpi-detail" style={{ marginTop: '4px', opacity: 0.7 }}>Jahr-Prognose: {projectedYearlyGenerated.toFixed(0)} kWh</div>
           </div>
           
@@ -278,12 +283,19 @@ function AnalyticsContent() {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <defs>
+                    <pattern id="striped-bar" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                      <rect width="2" height="4" fill="hsl(38, 92%, 70%)" fillOpacity="0.4" />
+                      <rect x="2" width="2" height="4" fill="transparent" />
+                    </pattern>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                   <XAxis dataKey="label" stroke="rgba(255,255,255,0.2)" tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} interval="preserveStartEnd" />
                   <YAxis stroke="rgba(255,255,255,0.2)" tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} tickFormatter={v => `${v} kWh`} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend wrapperStyle={{ fontSize: '12px' }} />
-                  <Bar dataKey="generated" name="Solarstrom" fill="var(--solar)" radius={[4, 4, 0, 0]} maxBarSize={50} />
+                  <Bar dataKey="generated" name="Solarstrom (Roh)" fill="var(--solar)" stackId="solar" maxBarSize={50} />
+                  <Bar dataKey="generated_estimated" name="Solarstrom (Geschätzt)" fill="url(#striped-bar)" stroke="hsl(38, 92%, 70%)" strokeWidth={1} stackId="solar" radius={[4, 4, 0, 0]} maxBarSize={50} />
                 </BarChart>
               </ResponsiveContainer>
             )}

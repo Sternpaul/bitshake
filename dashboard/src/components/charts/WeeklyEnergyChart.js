@@ -39,6 +39,8 @@ export default function WeeklyEnergyChart({ data = [], loading }) {
       date: date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }),
       consumed: Number(d.consumed_kwh || 0),
       exported: Number(d.exported_kwh || 0),
+      generated: Number(d.generated_kwh || 0),
+      generated_estimated: Number(d.generated_estimated_kwh || 0),
     };
   });
 
@@ -73,6 +75,22 @@ export default function WeeklyEnergyChart({ data = [], loading }) {
               dataKey="exported"
               name="Einspeisung"
               fill="hsl(38, 92%, 55%)"
+              radius={[4, 4, 0, 0]}
+              maxBarSize={40}
+            />
+            <Bar
+              dataKey="generated"
+              name="Solarstrom (Roh)"
+              fill="var(--solar)"
+              stackId="solar"
+              maxBarSize={40}
+            />
+            <Bar
+              dataKey="generated_estimated"
+              name="Solarstrom (Geschätzt)"
+              fill="hsl(38, 92%, 70%)"
+              fillOpacity={0.6}
+              stackId="solar"
               radius={[4, 4, 0, 0]}
               maxBarSize={40}
             />

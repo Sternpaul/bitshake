@@ -59,7 +59,8 @@ Electricity Meter ──(IR)──> Bitshake Air (Tasmota)
 - **Daily Power Curve** — Consumption vs. solar feed-in over 24 hours
 - **Weekly Energy Bars** — Stacked bar chart (import vs. export per day)
 - **Monthly Trend** — Area chart showing daily consumption trend
-- **Solar Generation Integration** — Direct integration with Marstek/Hame Microinverters. Total Solar generation dynamically recorded and visualized alongside grid data. (See [docs/marstek-solar-setup.md](docs/marstek-solar-setup.md))
+- **Solar Generation Integration** — Direct integration with Marstek/Hame Microinverters. Total Solar generation dynamically recorded and visualized alongside grid data. 
+  - **Dual-Layer Visualization**: Displays 100% true measured data from the East inverter as solid yellow bars/areas, with the Gaussian-estimated extrapolation of the unmeasured South inverter overlaid in transparent stripes. (See [docs/marstek-solar-setup.md](docs/marstek-solar-setup.md))
 
 ### Analytics
 - **Multi-range analysis** — 24 hours, 7 days, 30 days, 1 year

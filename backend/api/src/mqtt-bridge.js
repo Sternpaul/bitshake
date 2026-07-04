@@ -16,15 +16,17 @@ let lastReading = null;
 let lastRawPayloadGrid = null;
 let lastRawPayloadSolar = null;
 let messageCount = 0;
-let enableSolarEstimation = true;
 
 let lastGridData = { totalImport: null, totalExport: null, powerCurrent: null, powerL1: null, powerL2: null, powerL3: null };
-let lastSolarData = { totalSolarPower: null, dailyEnergy: null, totalEnergy: null };
-
-export function setSolarEstimation(enabled) {
-  enableSolarEstimation = enabled;
-  console.log(`[MQTT] Solar estimation set to: ${enabled}`);
-}
+let lastSolarData = { 
+  totalSolarPower: null, 
+  dailyEnergy: null, 
+  monthlyEnergy: null, 
+  totalEnergy: null,
+  estimatedPower: null,
+  estimatedDaily: null,
+  estimatedTotal: null
+};
 
 export function getSolarData() {
   return lastSolarData;
@@ -35,8 +37,6 @@ export function getSolarData() {
  * and writes readings to TimescaleDB.
  */
 export function startMqttBridge() {
-  loadInitialSettings();
-
   const options = {
     clientId: `bitshake-api-${Date.now()}`,
     clean: true,
@@ -105,96 +105,82 @@ export function startMqttBridge() {
 
 /**
  * Process a Tasmota SML sensor reading.
- * Expected payload format from Tasmota SML script:
- * {
- *   "Time": "2026-07-02T11:00:00",
- *   "SML": {
- *     "Total_in": 12345.678,
- *     "Total_out": 4567.890,
- *     "Power_curr": 1250,
- *     "Power_L1": 420,
- *     "Power_L2": 380,
- *     "Power_L3": 450,
- *     "Meter_id": "..."
- *   }
- * }
  */
 async function processReading(payload, topic) {
   // --- hm2mqtt / Marstek Integration ---
   if (topic.includes('hm2mqtt') && topic.endsWith('/data')) {
     if (typeof payload === 'object' && payload !== null) {
       const time = new Date();
-      // Combine pv1Power and pv2Power if they exist
+      
       const pv1 = parseFloat(payload.pv1Power || 0);
       const pv2 = parseFloat(payload.pv2Power || 0);
-      const measuredEast = pv1 + pv2;
+      const measuredEast = pv1 + pv2; // Raw solid output
       
-      let totalSolarPower = measuredEast;
-      let capacityMultiplier = 1.0;
+      // Calculate Gaussian extrapolation for South panels
+      const now = new Date();
+      const hour = now.getUTCHours() + (now.getUTCMinutes() / 60);
+      const theoEast = 800 * Math.exp(-0.5 * Math.pow((hour - 9.5) / 3, 2));
+      const theoSouth = 650 * Math.exp(-0.5 * Math.pow((hour - 12.5) / 3, 2));
       
-      if (enableSolarEstimation) {
-        // We use a Gaussian time-of-day model to estimate the 650W panels based on the East panels.
-        const hour = time.getHours() + time.getMinutes() / 60;
-        
-        // East peaks at 9:30 AM, South peaks at 12:30 PM
-        const theoEast = 800 * Math.exp(-0.5 * Math.pow((hour - 9.5) / 3.0, 2));
-        const theoSouth = 650 * Math.exp(-0.5 * Math.pow((hour - 12.5) / 3.0, 2));
-        
-        // Prevent division by zero
-        const safeTheoEast = Math.max(theoEast, 50); 
-        
-        // Ratio of expected South to expected East (capped at 4x)
-        const ratio = Math.min(theoSouth / safeTheoEast, 4.0);
-        
-        const estimatedSouth = Math.min(measuredEast * ratio, 650);
-        totalSolarPower = Math.round(measuredEast + estimatedSouth);
-        
-        // The total extrapolation factor is total capacity ratio = 1450 / 800 = 1.8125
-        capacityMultiplier = 1450 / 800;
-        console.log(`[DEBUG-SOLAR] ESTIMATION ON: measuredEast=${measuredEast}, theoEast=${theoEast.toFixed(1)}, theoSouth=${theoSouth.toFixed(1)}, ratio=${ratio.toFixed(2)}, estimatedSouth=${estimatedSouth.toFixed(1)}, totalSolarPower=${totalSolarPower}`);
-      } else {
-        console.log(`[DEBUG-SOLAR] ESTIMATION OFF: measuredEast=${measuredEast}, totalSolarPower=${totalSolarPower}`);
-      }
+      const ratio = theoEast > 50 ? (theoSouth / theoEast) : 0;
+      const estimatedSouth = Math.min(measuredEast * ratio, 650);
+      
+      // We explicitly separate Raw vs Estimated
+      const estimatedPower = Math.round(estimatedSouth);
+      const capacityMultiplier = 1450 / 800; // Total capacity ratio
       
       const measuredDaily = parseFloat(payload.dailyEnergyGenerated || 0);
-      const dailyEnergy = Number((measuredDaily * capacityMultiplier).toFixed(3));
-
       const measuredMonthly = parseFloat(payload.monthlyEnergyGenerated || 0);
-      const monthlyEnergy = Number((measuredMonthly * capacityMultiplier).toFixed(3));
-      
       const measuredTotal = parseFloat(payload.totalEnergyGenerated || 0);
-      const totalEnergy = Number((measuredTotal * capacityMultiplier).toFixed(3));
       
-      lastSolarData = { totalSolarPower, dailyEnergy, monthlyEnergy, totalEnergy };
+      const estimatedDaily = measuredDaily * (capacityMultiplier - 1.0);
+      const estimatedTotal = measuredTotal * (capacityMultiplier - 1.0);
+
+      lastSolarData = { 
+        totalSolarPower: measuredEast, 
+        dailyEnergy: measuredDaily, 
+        monthlyEnergy: measuredMonthly, 
+        totalEnergy: measuredTotal,
+        estimatedPower: estimatedPower,
+        estimatedDaily: estimatedDaily,
+        estimatedTotal: estimatedTotal
+      };
       
       // Insert into TimescaleDB with combined data
       await query(
-        `INSERT INTO meter_readings (time, total_import, total_export, power_current, power_l1, power_l2, power_l3, solar_power, solar_energy_daily, solar_energy_total)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-        [time, lastGridData.totalImport, lastGridData.totalExport, lastGridData.powerCurrent, lastGridData.powerL1, lastGridData.powerL2, lastGridData.powerL3, totalSolarPower, dailyEnergy, totalEnergy]
+        `INSERT INTO meter_readings (time, total_import, total_export, power_current, power_l1, power_l2, power_l3, solar_power, solar_energy_daily, solar_energy_total, solar_estimated_power, solar_estimated_daily, solar_estimated_total)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+        [
+          time, 
+          lastGridData.totalImport, 
+          lastGridData.totalExport, 
+          lastGridData.powerCurrent, 
+          lastGridData.powerL1, 
+          lastGridData.powerL2, 
+          lastGridData.powerL3, 
+          lastSolarData.totalSolarPower, 
+          lastSolarData.dailyEnergy, 
+          lastSolarData.totalEnergy,
+          lastSolarData.estimatedPower,
+          lastSolarData.estimatedDaily,
+          lastSolarData.estimatedTotal
+        ]
       );
       
-      console.log(`[DB] Inserted Solar Reading: ${totalSolarPower}W`);
+      console.log(`[DB] Inserted Solar Reading: ${measuredEast}W (Est: ${estimatedPower}W)`);
     }
     return;
   }
 
   // --- Tasmota / Logarex Integration ---
-  // Tasmota wraps sensor data in a key — find the SML data
-  // It could be under "SML", or the Tasmota topic name
   const sml = payload.SML || payload.sml || findSmlData(payload);
 
   if (!sml) {
-    // Not an SML message — might be a status or other Tasmota message
     return;
   }
 
-  // Ignore Tasmota's payload.Time entirely. ESP8266/ESP32 clocks often drift or
-  // lack proper timezone/DST configurations, resulting in 1-2 hour display offsets.
-  // Using the server's NTP-synced clock guarantees standard UTC timestamps.
   const time = new Date();
 
-  // Extract values with fallbacks for different Tasmota script naming conventions
   const totalImport = sml.Total_in ?? sml.total_in ?? sml.Import ?? sml.Bezug ?? sml.ImportActive ?? null;
   const totalExport = sml.Total_out ?? sml.total_out ?? sml.Export ?? sml.Einspeisung ?? sml.ExportActive ?? null;
   const powerCurrent = sml.Power_curr ?? sml.power_curr ?? sml.Power ?? sml.Leistung ?? null;
@@ -202,7 +188,6 @@ async function processReading(payload, topic) {
   const powerL2 = sml.Power_L2 ?? sml.power_l2 ?? sml.power_L2 ?? sml.P_L2 ?? null;
   const powerL3 = sml.Power_L3 ?? sml.power_l3 ?? sml.power_L3 ?? sml.P_L3 ?? null;
 
-  // Validate: at least one meaningful value
   if (totalImport === null && totalExport === null && powerCurrent === null) {
     console.warn('[MQTT] Received SML data but no recognized values:', JSON.stringify(sml).substring(0, 200));
     return;
@@ -210,11 +195,24 @@ async function processReading(payload, topic) {
   
   lastGridData = { totalImport, totalExport, powerCurrent, powerL1, powerL2, powerL3 };
 
-  // Insert into TimescaleDB with combined data
   await query(
-    `INSERT INTO meter_readings (time, total_import, total_export, power_current, power_l1, power_l2, power_l3, solar_power, solar_energy_daily, solar_energy_total)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-    [time, totalImport, totalExport, powerCurrent, powerL1, powerL2, powerL3, lastSolarData.totalSolarPower, lastSolarData.dailyEnergy, lastSolarData.totalEnergy]
+    `INSERT INTO meter_readings (time, total_import, total_export, power_current, power_l1, power_l2, power_l3, solar_power, solar_energy_daily, solar_energy_total, solar_estimated_power, solar_estimated_daily, solar_estimated_total)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+    [
+      time, 
+      totalImport, 
+      totalExport, 
+      powerCurrent, 
+      powerL1, 
+      powerL2, 
+      powerL3, 
+      lastSolarData.totalSolarPower, 
+      lastSolarData.dailyEnergy, 
+      lastSolarData.totalEnergy,
+      lastSolarData.estimatedPower,
+      lastSolarData.estimatedDaily,
+      lastSolarData.estimatedTotal
+    ]
   );
 
   messageCount++;
@@ -237,12 +235,10 @@ async function processReading(payload, topic) {
  * Try to find SML-like data in the payload, supporting various Tasmota configurations.
  */
 function findSmlData(payload) {
-  // Some Tasmota configs nest data differently
   for (const key of Object.keys(payload)) {
     if (key === 'Time' || key === 'TempUnit') continue;
     const val = payload[key];
     if (typeof val === 'object' && val !== null) {
-      // Check if it has energy-related keys
       if ('Total_in' in val || 'total_in' in val || 'Power_curr' in val || 'Import' in val || 'Bezug' in val || 'ImportActive' in val) {
         return val;
       }

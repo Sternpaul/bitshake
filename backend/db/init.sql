@@ -19,7 +19,10 @@ CREATE TABLE IF NOT EXISTS meter_readings (
     power_l3        DOUBLE PRECISION,   -- 1-0:76.7.0 Phase 3 power (W)
     solar_power     DOUBLE PRECISION,
     solar_energy_daily DOUBLE PRECISION,
-    solar_energy_total DOUBLE PRECISION
+    solar_energy_total DOUBLE PRECISION,
+    solar_estimated_power DOUBLE PRECISION,
+    solar_estimated_daily DOUBLE PRECISION,
+    solar_estimated_total DOUBLE PRECISION
 );
 
 SELECT create_hypertable('meter_readings', 'time', if_not_exists => TRUE);
@@ -64,14 +67,15 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE MATERIALIZED VIEW IF NOT EXISTS hourly_energy
 WITH (timescaledb.continuous) AS
 SELECT
-    time_bucket('1 hour', time)                             AS bucket,
-    AVG(power_current)                                      AS avg_power,
-    MAX(power_current)                                      AS max_power,
-    MIN(power_current)                                      AS min_power,
-    LAST(total_import, time) - FIRST(total_import, time)    AS consumed_kwh,
-    LAST(total_export, time) - FIRST(total_export, time)    AS exported_kwh,
+    time_bucket('1 hour', time) AS bucket,
+    AVG(power_current) AS avg_power,
+    MAX(power_current) AS max_power,
+    MIN(power_current) AS min_power,
+    LAST(total_import, time) - FIRST(total_import, time) AS consumed_kwh,
+    LAST(total_export, time) - FIRST(total_export, time) AS exported_kwh,
     LAST(solar_energy_total, time) - FIRST(solar_energy_total, time) AS generated_kwh,
-    COUNT(*)                                                AS sample_count
+    LAST(solar_estimated_total, time) - FIRST(solar_estimated_total, time) AS generated_estimated_kwh,
+    COUNT(*) AS sample_count
 FROM meter_readings
 GROUP BY bucket
 WITH NO DATA;
@@ -80,14 +84,15 @@ WITH NO DATA;
 CREATE MATERIALIZED VIEW IF NOT EXISTS daily_energy
 WITH (timescaledb.continuous) AS
 SELECT
-    time_bucket('1 day', time)                              AS bucket,
-    AVG(power_current)                                      AS avg_power,
-    MAX(power_current)                                      AS max_power,
-    MIN(power_current)                                      AS min_power,
-    LAST(total_import, time) - FIRST(total_import, time)    AS consumed_kwh,
-    LAST(total_export, time) - FIRST(total_export, time)    AS exported_kwh,
+    time_bucket('1 day', time) AS bucket,
+    AVG(power_current) AS avg_power,
+    MAX(power_current) AS max_power,
+    MIN(power_current) AS min_power,
+    LAST(total_import, time) - FIRST(total_import, time) AS consumed_kwh,
+    LAST(total_export, time) - FIRST(total_export, time) AS exported_kwh,
     LAST(solar_energy_total, time) - FIRST(solar_energy_total, time) AS generated_kwh,
-    COUNT(*)                                                AS sample_count
+    LAST(solar_estimated_total, time) - FIRST(solar_estimated_total, time) AS generated_estimated_kwh,
+    COUNT(*) AS sample_count
 FROM meter_readings
 GROUP BY bucket
 WITH NO DATA;

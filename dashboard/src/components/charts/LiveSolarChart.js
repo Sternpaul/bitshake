@@ -12,7 +12,13 @@ function CustomTooltip({ active, payload, label }) {
     <div className="custom-tooltip">
       <div className="label">{new Date(label).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
       <div className="value" style={{ color: 'var(--solar)' }}>
-        {Math.round(value)} W (Solarstrom)
+        {Math.round(payload.find(p => p.dataKey === 'solar_raw')?.value || 0)} W (Roh)
+      </div>
+      <div className="value" style={{ color: 'hsl(38, 92%, 70%)', opacity: 0.8 }}>
+        + {Math.round(payload.find(p => p.dataKey === 'solar_estimated')?.value || 0)} W (Geschätzt)
+      </div>
+      <div className="value" style={{ fontWeight: 'bold', marginTop: '4px' }}>
+        Gesamt: {Math.round((payload.find(p => p.dataKey === 'solar_raw')?.value || 0) + (payload.find(p => p.dataKey === 'solar_estimated')?.value || 0))} W
       </div>
     </div>
   );
@@ -36,10 +42,13 @@ export default function LiveSolarChart({ data = [], loading }) {
   const formattedData = data.map(d => ({
     ...d,
     time: new Date(d.time).getTime(),
-    solar: d.solar_power || 0,
+    solar_raw: d.solar_power || 0,
+    solar_estimated: d.solar_estimated_power || 0,
   }));
 
-  const latestSolar = formattedData.length > 0 ? formattedData[formattedData.length - 1].solar : 0;
+  const latestRaw = formattedData.length > 0 ? formattedData[formattedData.length - 1].solar_raw : 0;
+  const latestEst = formattedData.length > 0 ? formattedData[formattedData.length - 1].solar_estimated : 0;
+  const latestSolar = latestRaw + latestEst;
 
   return (
     <div className="chart-card full-width" style={{ marginTop: 'var(--space-6)' }}>
@@ -65,9 +74,14 @@ export default function LiveSolarChart({ data = [], loading }) {
           <AreaChart data={formattedData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="solarGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(38, 92%, 55%)" stopOpacity={0.4} />
-                <stop offset="95%" stopColor="hsl(38, 92%, 55%)" stopOpacity={0} />
+                <stop offset="5%" stopColor="hsl(38, 92%, 55%)" stopOpacity={0.7} />
+                <stop offset="95%" stopColor="hsl(38, 92%, 55%)" stopOpacity={0.2} />
               </linearGradient>
+              {/* Striped pattern for estimated data */}
+              <pattern id="striped" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                <rect width="4" height="8" fill="hsl(38, 92%, 70%)" fillOpacity="0.4" />
+                <rect x="4" width="4" height="8" fill="transparent" />
+              </pattern>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
             <XAxis
@@ -86,11 +100,24 @@ export default function LiveSolarChart({ data = [], loading }) {
             <Tooltip content={<CustomTooltip />} />
             <Area
               type="monotone"
-              dataKey="solar"
-              name="Solarstrom"
+              dataKey="solar_raw"
+              name="Solarstrom (Roh)"
               stroke="hsl(38, 92%, 55%)"
               fill="url(#solarGradient)"
               strokeWidth={2}
+              stackId="1"
+              dot={false}
+              isAnimationActive={false}
+            />
+            <Area
+              type="monotone"
+              dataKey="solar_estimated"
+              name="Solarstrom (Geschätzt)"
+              stroke="hsl(38, 92%, 70%)"
+              strokeDasharray="4 4"
+              fill="url(#striped)"
+              strokeWidth={1.5}
+              stackId="1"
               dot={false}
               isAnimationActive={false}
             />

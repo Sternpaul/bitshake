@@ -108,7 +108,13 @@ function DashboardContent() {
               <span style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <span>{current.power < 0 ? '↑ Einspeisung ins Netz' : '↓ Bezug aus dem Netz'}</span>
                 {current.solar_power > 0 && (
-                  <span style={{ color: 'var(--solar)' }}>☀️ {Math.round(current.solar_power)} W Solar</span>
+                  <span style={{ color: 'var(--solar)', marginTop: '4px' }}>
+                    <strong>☀️ {Math.round(current.solar_power)} W Solar (Roh)</strong>
+                    <br />
+                    <span style={{ fontSize: '0.85em', opacity: 0.8 }}>
+                      + {Math.round((current.solar_estimated_power || 0))} W Geschätzt = {Math.round(current.solar_power + (current.solar_estimated_power || 0))} W Gesamt
+                    </span>
+                  </span>
                 )}
               </span>
             ) : 'Warte auf Daten...'}
@@ -136,9 +142,16 @@ function DashboardContent() {
             icon="☀️"
             label="Solarproduktion (Marstek)"
             value={overview?.inverter_stats ? formatNumber(overview.inverter_stats.dailyEnergy, 2) : '—'}
-            unit="kWh"
+            unit="kWh (Roh)"
             variant="solar"
-            detail={overview?.inverter_stats ? `Monat: ${formatNumber(overview.inverter_stats.monthlyEnergy, 2)} kWh | Gesamt: ${formatNumber(overview.inverter_stats.totalEnergy, 2)} kWh` : 'Keine Daten'}
+            detail={overview?.inverter_stats ? (
+              <span style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span>Roh: Mon. {formatNumber(overview.inverter_stats.monthlyEnergy, 1)} kWh | Ges. {formatNumber(overview.inverter_stats.totalEnergy, 1)} kWh</span>
+                <span style={{ fontSize: '0.9em', opacity: 0.8 }}>
+                  + Geschätzt: {formatNumber(overview.inverter_stats.estimatedDaily, 2)} kWh (Ges. {formatNumber(overview.inverter_stats.dailyEnergy + (overview.inverter_stats.estimatedDaily || 0), 2)} kWh)
+                </span>
+              </span>
+            ) : 'Keine Daten'}
             loading={loading}
           />
           <KPICard

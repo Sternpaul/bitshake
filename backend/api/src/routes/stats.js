@@ -26,24 +26,23 @@ export default async function statsRoutes(fastify) {
 
       // Latest reading
       const latestResult = await query(
-        `SELECT time, total_import, total_export, power_current, power_l1, power_l2, power_l3, solar_power
+        `SELECT time, total_import, total_export, power_current, power_l1, power_l2, power_l3, 
+                solar_power, solar_energy_daily, solar_energy_total,
+                solar_estimated_power, solar_estimated_daily, solar_estimated_total
          FROM meter_readings ORDER BY time DESC LIMIT 1`
       );
 
-      // Today's consumption and feed-in
-      // We use the difference between the last and first total_import/total_export today
-      const todayResult = await query(
-        `SELECT
-           LAST(total_import, time) - FIRST(total_import, time) AS consumed_today,
-           LAST(total_export, time) - FIRST(total_export, time) AS exported_today,
-           AVG(power_current) AS avg_power_today,
-           MAX(power_current) AS peak_power_today,
-           MIN(power_current) AS min_power_today,
-           COUNT(*) AS readings_today,
-           LAST(solar_energy_total, time) - FIRST(solar_energy_total, time) AS generated_today
-         FROM meter_readings
-         WHERE time >= date_trunc('day', NOW())`
-      );
+      // Today's summary
+      const todayResult = await query(`
+        SELECT 
+          MAX(power_current) as peak_power,
+          LAST(total_import, time) - FIRST(total_import, time) as consumed_kwh,
+          LAST(total_export, time) - FIRST(total_export, time) as exported_kwh,
+          LAST(solar_energy_total, time) - FIRST(solar_energy_total, time) as generated_kwh,
+          LAST(solar_estimated_total, time) - FIRST(solar_estimated_total, time) as generated_estimated_kwh
+        FROM meter_readings 
+        WHERE time >= CURRENT_DATE
+      `);
 
       // This week's consumption and feed-in
       const weekResult = await query(
@@ -66,20 +65,9 @@ export default async function statsRoutes(fastify) {
       );
 
       const latest = latestResult.rows[0] || null;
-      const today = todayResult.rows[0] || {};
+      const todayData = todayResult.rows[0] || {};
       const week = weekResult.rows[0] || {};
       const month = monthResult.rows[0] || {};
-
-      const consumedToday = parseFloat(today.consumed_today || 0);
-      const exportedToday = parseFloat(today.exported_today || 0);
-      const generatedToday = parseFloat(today.generated_today || 0);
-
-      // Net Grid Balance (Netzbilanz)
-      // Positive = Net Producer (Export > Import)
-      // Negative = Net Consumer (Import > Export)
-      const netBalanceKwh = exportedToday - consumedToday;
-      
-      const selfConsumptionToday = generatedToday > 0 ? ((generatedToday - exportedToday) / generatedToday) * 100 : 0;
 
       return reply.send({
         current: latest ? {
@@ -90,21 +78,19 @@ export default async function statsRoutes(fastify) {
           total_import: latest.total_import,
           total_export: latest.total_export,
           solar_power: latest.solar_power,
+          solar_estimated_power: latest.solar_estimated_power,
           timestamp: latest.time,
         } : null,
-        today: {
-          consumed_kwh: consumedToday,
-          exported_kwh: exportedToday,
-          avg_power: parseFloat(today.avg_power_today || 0),
-          peak_power: parseFloat(today.peak_power_today || 0),
-          min_power: parseFloat(today.min_power_today || 0),
-          net_balance_kwh: netBalanceKwh,
-          generated_kwh: generatedToday,
-          self_consumption_pct: Math.max(0, Math.min(100, selfConsumptionToday)),
-          cost: consumedToday * electricityPrice,
-          earnings: exportedToday * feedinTariff,
-          readings_count: parseInt(today.readings_today || 0),
-        },
+        today: todayData ? {
+          consumed_kwh: parseFloat(todayData.consumed_kwh || 0),
+          exported_kwh: parseFloat(todayData.exported_kwh || 0),
+          generated_kwh: parseFloat(todayData.generated_kwh || 0),
+          generated_estimated_kwh: parseFloat(todayData.generated_estimated_kwh || 0),
+          net_balance_kwh: parseFloat(todayData.exported_kwh || 0) - parseFloat(todayData.consumed_kwh || 0),
+          peak_power: parseFloat(todayData.peak_power || 0),
+          cost: parseFloat(todayData.consumed_kwh || 0) * electricityPrice,
+          earnings: enableFeedinTariff ? parseFloat(todayData.exported_kwh || 0) * feedinTariff : 0,
+        } : null,
         week: {
           consumed_kwh: parseFloat(week.consumed_week || 0),
           exported_kwh: parseFloat(week.exported_week || 0),
@@ -191,55 +177,58 @@ export default async function statsRoutes(fastify) {
     },
   }, async (request, reply) => {
     const { range } = request.query;
-
-    let int1 = '7 days';
-    let int2 = '14 days';
-    if (range === '24h') { int1 = '1 day'; int2 = '2 days'; }
-    if (range === '30d') { int1 = '30 days'; int2 = '60 days'; }
-    if (range === '1y') { int1 = '1 year'; int2 = '2 years'; }
+    let days = 7;
+    if (range === '24h') days = 1;
+    if (range === '30d') days = 30;
+    if (range === '1y') days = 365;
 
     try {
-      const currentRes = await query(
-        `SELECT 
-           LAST(total_import, time) - FIRST(total_import, time) AS consumed,
-           LAST(total_export, time) - FIRST(total_export, time) AS exported,
-           LAST(solar_energy_total, time) - FIRST(solar_energy_total, time) AS generated
-         FROM meter_readings
-         WHERE time >= NOW() - $1::interval`,
-        [int1]
-      );
+      const comparisonResult = await query(`
+        SELECT 
+          SUM(consumed_kwh) as period1_consumed,
+          SUM(exported_kwh) as period1_exported,
+          SUM(generated_kwh) as period1_generated,
+          SUM(generated_estimated_kwh) as period1_generated_estimated
+        FROM daily_energy
+        WHERE bucket >= NOW() - $1::interval AND bucket < NOW()
+      `, [`${days} days`]);
+      
+      const previousPeriodResult = await query(`
+        SELECT 
+          SUM(consumed_kwh) as period2_consumed,
+          SUM(exported_kwh) as period2_exported,
+          SUM(generated_kwh) as period2_generated,
+          SUM(generated_estimated_kwh) as period2_generated_estimated
+        FROM daily_energy
+        WHERE bucket >= NOW() - $1::interval AND bucket < NOW() - $2::interval
+      `, [`${days * 2} days`, `${days} days`]);
 
-      const previousRes = await query(
-        `SELECT 
-           LAST(total_import, time) - FIRST(total_import, time) AS consumed,
-           LAST(total_export, time) - FIRST(total_export, time) AS exported,
-           LAST(solar_energy_total, time) - FIRST(solar_energy_total, time) AS generated
-         FROM meter_readings
-         WHERE time >= NOW() - $2::interval AND time < NOW() - $1::interval`,
-        [int2, int1]
-      );
+      const c = comparisonResult.rows[0] || {};
+      const p = previousPeriodResult.rows[0] || {};
 
-      const current = currentRes.rows[0] || { consumed: 0, exported: 0, generated: 0 };
-      const previous = previousRes.rows[0] || { consumed: 0, exported: 0, generated: 0 };
+      const p1c = parseFloat(c.period1_consumed || 0);
+      const p2c = parseFloat(p.period2_consumed || 0);
+      const trendConsumedPct = p2c > 0 ? ((p1c - p2c) / p2c) * 100 : 0;
+      
+      const p1e = parseFloat(c.period1_exported || 0);
+      const p2e = parseFloat(p.period2_exported || 0);
+      const trendExportedPct = p2e > 0 ? ((p1e - p2e) / p2e) * 100 : 0;
+      
+      const p1g = parseFloat(c.period1_generated || 0);
+      const p2g = parseFloat(p.period2_generated || 0);
+      const trendGeneratedPct = p2g > 0 ? ((p1g - p2g) / p2g) * 100 : 0;
 
-      const curCons = parseFloat(current.consumed || 0);
-      const curExp = parseFloat(current.exported || 0);
-      const curGen = parseFloat(current.generated || 0);
-      const prevCons = parseFloat(previous.consumed || 0);
-      const prevExp = parseFloat(previous.exported || 0);
-      const prevGen = parseFloat(previous.generated || 0);
-
-      // If previous is 0 (or no data), we cannot calculate a trend percentage safely.
-      const trendCons = prevCons > 0 ? ((curCons - prevCons) / prevCons) * 100 : null;
-      const trendExp = prevExp > 0 ? ((curExp - prevExp) / prevExp) * 100 : null;
-      const trendGen = prevGen > 0 ? ((curGen - prevGen) / prevGen) * 100 : null;
+      const p1ge = parseFloat(c.period1_generated_estimated || 0);
+      const p2ge = parseFloat(p.period2_generated_estimated || 0);
+      const trendGeneratedEstimatedPct = p2ge > 0 ? ((p1ge - p2ge) / p2ge) * 100 : 0;
 
       return reply.send({
-        current: { consumed: curCons, exported: curExp, generated: curGen },
-        previous: { consumed: prevCons, exported: prevExp, generated: prevGen },
-        trend_consumed_pct: trendCons,
-        trend_exported_pct: trendExp,
-        trend_generated_pct: trendGen
+        current: { consumed: p1c, exported: p1e, generated: p1g, generated_estimated: p1ge },
+        previous: { consumed: p2c, exported: p2e, generated: p2g, generated_estimated: p2ge },
+        trend_consumed_pct: trendConsumedPct,
+        trend_exported_pct: trendExportedPct,
+        trend_generated_pct: trendGeneratedPct,
+        trend_generated_estimated_pct: trendGeneratedEstimatedPct,
       });
     } catch (err) {
       request.log.error(err);
