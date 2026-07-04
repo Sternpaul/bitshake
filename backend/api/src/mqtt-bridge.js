@@ -167,9 +167,14 @@ async function processReading(payload, topic) {
       const estimatedPower = Math.round(totalEstimatedPower);
       const capacityMultiplier = (referenceArray.capacity + totalVirtualCapacity) / referenceArray.capacity; // Total capacity ratio
       
-      const measuredDaily = parseFloat(payload.dailyEnergyGenerated || 0);
-      const measuredMonthly = parseFloat(payload.monthlyEnergyGenerated || 0);
-      const measuredTotal = parseFloat(payload.totalEnergyGenerated || 0);
+      const pDaily = parseFloat(payload.dailyEnergyGenerated);
+      const measuredDaily = (pDaily > 0) ? pDaily : (lastSolarData.dailyEnergy || 0);
+      
+      const pMonthly = parseFloat(payload.monthlyEnergyGenerated);
+      const measuredMonthly = (pMonthly > 0) ? pMonthly : (lastSolarData.monthlyEnergy || 0);
+      
+      const pTotal = parseFloat(payload.totalEnergyGenerated);
+      const measuredTotal = (pTotal > 0) ? pTotal : (lastSolarData.totalEnergy || 0);
       
       const estimatedDaily = measuredDaily * (capacityMultiplier - 1.0);
       const estimatedTotal = measuredTotal * (capacityMultiplier - 1.0);
