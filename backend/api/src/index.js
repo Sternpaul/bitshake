@@ -12,6 +12,7 @@ import authRoutes from './routes/auth.js';
 import readingsRoutes from './routes/readings.js';
 import statsRoutes from './routes/stats.js';
 import settingsRoutes from './routes/settings.js';
+import { runMigrations } from './migrations.js';
 
 const PORT = parseInt(process.env.PORT || '3001');
 const HOST = process.env.HOST || '0.0.0.0';
@@ -93,55 +94,11 @@ const start = async () => {
     startMqttBridge();
 
     // Run migration
+    // Run database migrations
     try {
-      const { query } = await import('./db.js');
-      const migrationSql = `
-        ALTER TABLE meter_readings ADD COLUMN IF NOT EXISTS solar_power DOUBLE PRECISION;
-        ALTER TABLE meter_readings ADD COLUMN IF NOT EXISTS solar_energy_daily DOUBLE PRECISION;
-        ALTER TABLE meter_readings ADD COLUMN IF NOT EXISTS solar_energy_total DOUBLE PRECISION;
-        
-        -- New columns for explicit estimated values
-        ALTER TABLE meter_readings ADD COLUMN IF NOT EXISTS solar_estimated_power DOUBLE PRECISION;
-        ALTER TABLE meter_readings ADD COLUMN IF NOT EXISTS solar_estimated_daily DOUBLE PRECISION;
-        ALTER TABLE meter_readings ADD COLUMN IF NOT EXISTS solar_estimated_total DOUBLE PRECISION;
-        
-        DROP MATERIALIZED VIEW IF EXISTS hourly_energy CASCADE;
-        DROP MATERIALIZED VIEW IF EXISTS daily_energy CASCADE;
-        
-        CREATE MATERIALIZED VIEW IF NOT EXISTS hourly_energy WITH (timescaledb.continuous) AS
-        SELECT 
-          time_bucket('1 hour', time) AS bucket, 
-          AVG(power_current) AS avg_power, 
-          MAX(power_current) AS max_power, 
-          MIN(power_current) AS min_power, 
-          LAST(total_import, time) - FIRST(total_import, time) AS consumed_kwh, 
-          LAST(total_export, time) - FIRST(total_export, time) AS exported_kwh, 
-          LAST(solar_energy_total, time) - FIRST(solar_energy_total, time) AS generated_kwh,
-          LAST(solar_estimated_total, time) - FIRST(solar_estimated_total, time) AS generated_estimated_kwh,
-          COUNT(*) AS sample_count
-        FROM meter_readings GROUP BY bucket WITH NO DATA;
-        
-        CREATE MATERIALIZED VIEW IF NOT EXISTS daily_energy WITH (timescaledb.continuous) AS
-        SELECT 
-          time_bucket('1 day', time) AS bucket, 
-          AVG(power_current) AS avg_power, 
-          MAX(power_current) AS max_power, 
-          MIN(power_current) AS min_power, 
-          LAST(total_import, time) - FIRST(total_import, time) AS consumed_kwh, 
-          LAST(total_export, time) - FIRST(total_export, time) AS exported_kwh, 
-          LAST(solar_energy_total, time) - FIRST(solar_energy_total, time) AS generated_kwh,
-          LAST(solar_estimated_total, time) - FIRST(solar_estimated_total, time) AS generated_estimated_kwh,
-          COUNT(*) AS sample_count
-        FROM meter_readings GROUP BY bucket WITH NO DATA;
-        
-        SELECT add_continuous_aggregate_policy('hourly_energy', start_offset => INTERVAL '3 hours', end_offset => INTERVAL '1 hour', schedule_interval => INTERVAL '1 hour', if_not_exists => TRUE);
-        SELECT add_continuous_aggregate_policy('daily_energy', start_offset => INTERVAL '3 days', end_offset => INTERVAL '1 day', schedule_interval => INTERVAL '1 day', if_not_exists => TRUE);
-      `;
-      console.log('[DB] Running solar migration script...');
-      await query(migrationSql);
-      console.log('[DB] Solar migration complete.');
+      await runMigrations();
     } catch (e) {
-      console.warn('[DB] Migration failed (it may have already run):', e.message);
+      console.warn('[DB] Migrations failed:', e.message);
     }
 
     // Start HTTP server

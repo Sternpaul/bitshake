@@ -1,4 +1,5 @@
 import { query } from '../db.js';
+import { loadSolarSettings } from '../mqtt-bridge.js';
 
 /**
  * Register settings routes.
@@ -38,12 +39,21 @@ export default async function settingsRoutes(fastify) {
           feedin_tariff: { type: 'string', pattern: '^\\d+(\\.\\d+)?$' },
           currency: { type: 'string', enum: ['EUR', 'USD', 'GBP', 'CHF'] },
           dashboard_refresh_seconds: { type: 'string', pattern: '^\\d+$' },
+          solar_east_capacity: { type: 'string', pattern: '^\\d+$' },
+          solar_south_capacity: { type: 'string', pattern: '^\\d+$' },
+          solar_east_peak_hour: { type: 'string', pattern: '^\\d+(\\.\\d+)?$' },
+          solar_south_peak_hour: { type: 'string', pattern: '^\\d+(\\.\\d+)?$' },
+          solar_east_curve_width: { type: 'string', pattern: '^\\d+(\\.\\d+)?$' },
+          solar_south_curve_width: { type: 'string', pattern: '^\\d+(\\.\\d+)?$' },
         },
       },
     },
   }, async (request, reply) => {
     const updates = request.body;
-    const allowedKeys = ['electricity_price', 'enable_feedin_tariff', 'feedin_tariff', 'currency', 'dashboard_refresh_seconds'];
+    const allowedKeys = [
+      'electricity_price', 'enable_feedin_tariff', 'feedin_tariff', 'currency', 'dashboard_refresh_seconds',
+      'solar_east_capacity', 'solar_south_capacity', 'solar_east_peak_hour', 'solar_south_peak_hour', 'solar_east_curve_width', 'solar_south_curve_width'
+    ];
 
     try {
       const results = {};
@@ -79,6 +89,11 @@ export default async function settingsRoutes(fastify) {
           [key, value]
         );
         results[key] = value;
+      }
+      
+      // If solar settings were updated, reload them in the MQTT bridge immediately
+      if (Object.keys(results).some(k => k.startsWith('solar_'))) {
+        await loadSolarSettings();
       }
       
       return reply.send({ message: 'Settings updated', data: results });

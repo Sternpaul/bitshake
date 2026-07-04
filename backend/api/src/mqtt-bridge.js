@@ -28,6 +28,38 @@ let lastSolarData = {
   estimatedTotal: null
 };
 
+// Solar curve parameters
+let curveSettings = {
+  eastCapacity: 800,
+  southCapacity: 650,
+  eastPeakHour: 9.5,
+  southPeakHour: 12.5,
+  eastCurveWidth: 3.0,
+  southCurveWidth: 3.0
+};
+
+export async function loadSolarSettings() {
+  try {
+    const res = await query("SELECT key, value FROM settings WHERE key LIKE 'solar_%'");
+    for (const row of res.rows) {
+      const val = parseFloat(row.value);
+      if (isNaN(val)) continue;
+      
+      switch(row.key) {
+        case 'solar_east_capacity': curveSettings.eastCapacity = val; break;
+        case 'solar_south_capacity': curveSettings.southCapacity = val; break;
+        case 'solar_east_peak_hour': curveSettings.eastPeakHour = val; break;
+        case 'solar_south_peak_hour': curveSettings.southPeakHour = val; break;
+        case 'solar_east_curve_width': curveSettings.eastCurveWidth = val; break;
+        case 'solar_south_curve_width': curveSettings.southCurveWidth = val; break;
+      }
+    }
+    console.log('[MQTT] Loaded dynamic solar curve settings:', curveSettings);
+  } catch (err) {
+    console.error('[MQTT] Failed to load solar settings:', err);
+  }
+}
+
 export function getSolarData() {
   return lastSolarData;
 }
@@ -119,15 +151,18 @@ async function processReading(payload, topic) {
       // Calculate Gaussian extrapolation for South panels
       const now = new Date();
       const hour = now.getUTCHours() + (now.getUTCMinutes() / 60);
-      const theoEast = 800 * Math.exp(-0.5 * Math.pow((hour - 9.5) / 3, 2));
-      const theoSouth = 650 * Math.exp(-0.5 * Math.pow((hour - 12.5) / 3, 2));
+      
+      const { eastCapacity, southCapacity, eastPeakHour, southPeakHour, eastCurveWidth, southCurveWidth } = curveSettings;
+      
+      const theoEast = eastCapacity * Math.exp(-0.5 * Math.pow((hour - eastPeakHour) / eastCurveWidth, 2));
+      const theoSouth = southCapacity * Math.exp(-0.5 * Math.pow((hour - southPeakHour) / southCurveWidth, 2));
       
       const ratio = theoEast > 50 ? (theoSouth / theoEast) : 0;
-      const estimatedSouth = Math.min(measuredEast * ratio, 650);
+      const estimatedSouth = Math.min(measuredEast * ratio, southCapacity);
       
       // We explicitly separate Raw vs Estimated
       const estimatedPower = Math.round(estimatedSouth);
-      const capacityMultiplier = 1450 / 800; // Total capacity ratio
+      const capacityMultiplier = (eastCapacity + southCapacity) / eastCapacity; // Total capacity ratio
       
       const measuredDaily = parseFloat(payload.dailyEnergyGenerated || 0);
       const measuredMonthly = parseFloat(payload.monthlyEnergyGenerated || 0);
@@ -270,12 +305,8 @@ export function stopMqttBridge() {
 }
 
 async function loadInitialSettings() {
-  try {
-    const res = await query("SELECT value FROM settings WHERE key = 'enable_solar_estimation'");
-    if (res.rows.length > 0) {
-      setSolarEstimation(res.rows[0].value === 'true');
-    }
-  } catch (err) {
-    console.error('[MQTT] Failed to load initial settings:', err);
-  }
+  await loadSolarSettings();
 }
+
+// Call it on startup
+loadInitialSettings();

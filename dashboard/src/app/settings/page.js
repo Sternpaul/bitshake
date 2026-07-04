@@ -21,6 +21,14 @@ function SettingsContent() {
   const [currency, setCurrency] = useState('EUR');
   const [refreshInterval, setRefreshInterval] = useState('10');
 
+  // Solar Curve settings
+  const [solarEastCapacity, setSolarEastCapacity] = useState('800');
+  const [solarSouthCapacity, setSolarSouthCapacity] = useState('650');
+  const [solarEastPeakHour, setSolarEastPeakHour] = useState('9.5');
+  const [solarSouthPeakHour, setSolarSouthPeakHour] = useState('12.5');
+  const [solarEastCurveWidth, setSolarEastCurveWidth] = useState('3.0');
+  const [solarSouthCurveWidth, setSolarSouthCurveWidth] = useState('3.0');
+
   // Password change
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -60,6 +68,13 @@ function SettingsContent() {
         if (s.feedin_tariff) setFeedinTariff(s.feedin_tariff.value);
         if (s.currency) setCurrency(s.currency.value);
         if (s.dashboard_refresh_seconds) setRefreshInterval(s.dashboard_refresh_seconds.value);
+        
+        if (s.solar_east_capacity) setSolarEastCapacity(s.solar_east_capacity.value);
+        if (s.solar_south_capacity) setSolarSouthCapacity(s.solar_south_capacity.value);
+        if (s.solar_east_peak_hour) setSolarEastPeakHour(s.solar_east_peak_hour.value);
+        if (s.solar_south_peak_hour) setSolarSouthPeakHour(s.solar_south_peak_hour.value);
+        if (s.solar_east_curve_width) setSolarEastCurveWidth(s.solar_east_curve_width.value);
+        if (s.solar_south_curve_width) setSolarSouthCurveWidth(s.solar_south_curve_width.value);
       } catch (err) {
         console.error('Failed to load settings:', err);
       } finally {
@@ -93,6 +108,12 @@ function SettingsContent() {
         feedin_tariff: feedinTariff,
         currency,
         dashboard_refresh_seconds: refreshInterval,
+        solar_east_capacity: solarEastCapacity,
+        solar_south_capacity: solarSouthCapacity,
+        solar_east_peak_hour: solarEastPeakHour,
+        solar_south_peak_hour: solarSouthPeakHour,
+        solar_east_curve_width: solarEastCurveWidth,
+        solar_south_curve_width: solarSouthCurveWidth,
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -228,6 +249,74 @@ function SettingsContent() {
               </select>
             </div>
 
+          </div>
+
+          {/* Solar Curve Settings */}
+          <div className="settings-card" style={{ gridColumn: '1 / -1' }}>
+            <div className="settings-card-title">☀️ Solar-Kurve (Gaußsches Modell)</div>
+            <div className="form-hint" style={{ marginBottom: 'var(--space-6)' }}>
+              Passen Sie das Gauß-Modell an, um die Erzeugung Ihrer nicht-messbaren Solarpaneele realistisch zu schätzen.
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-6)' }}>
+              {/* East Panels */}
+              <div style={{ padding: 'var(--space-4)', background: 'var(--surface-sunken)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+                <h3 style={{ fontSize: '1rem', marginBottom: 'var(--space-4)', color: 'var(--solar)' }}>Ost-Ausrichtung (Gemessen)</h3>
+                
+                <div className="form-group">
+                  <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Kapazität (W)</span>
+                    <span style={{ fontWeight: 'bold' }}>{solarEastCapacity} W</span>
+                  </label>
+                  <input type="range" min="0" max="3000" step="10" value={solarEastCapacity} onChange={e => setSolarEastCapacity(e.target.value)} style={{ width: '100%', accentColor: 'var(--solar)' }} />
+                </div>
+                
+                <div className="form-group">
+                  <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Sonnenhöchststand (Uhrzeit)</span>
+                    <span style={{ fontWeight: 'bold' }}>{Math.floor(solarEastPeakHour)}:{String(Math.round((solarEastPeakHour % 1) * 60)).padStart(2, '0')}</span>
+                  </label>
+                  <input type="range" min="0" max="24" step="0.5" value={solarEastPeakHour} onChange={e => setSolarEastPeakHour(e.target.value)} style={{ width: '100%', accentColor: 'var(--solar)' }} />
+                </div>
+                
+                <div className="form-group">
+                  <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Kurvenbreite (Stunden)</span>
+                    <span style={{ fontWeight: 'bold' }}>{solarEastCurveWidth} h</span>
+                  </label>
+                  <input type="range" min="0.5" max="8" step="0.1" value={solarEastCurveWidth} onChange={e => setSolarEastCurveWidth(e.target.value)} style={{ width: '100%', accentColor: 'var(--solar)' }} />
+                </div>
+              </div>
+
+              {/* South Panels */}
+              <div style={{ padding: 'var(--space-4)', background: 'var(--surface-sunken)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+                <h3 style={{ fontSize: '1rem', marginBottom: 'var(--space-4)', color: 'hsl(38, 92%, 70%)' }}>Süd-Ausrichtung (Geschätzt)</h3>
+                
+                <div className="form-group">
+                  <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Kapazität (W)</span>
+                    <span style={{ fontWeight: 'bold' }}>{solarSouthCapacity} W</span>
+                  </label>
+                  <input type="range" min="0" max="3000" step="10" value={solarSouthCapacity} onChange={e => setSolarSouthCapacity(e.target.value)} style={{ width: '100%', accentColor: 'hsl(38, 92%, 70%)' }} />
+                </div>
+                
+                <div className="form-group">
+                  <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Sonnenhöchststand (Uhrzeit)</span>
+                    <span style={{ fontWeight: 'bold' }}>{Math.floor(solarSouthPeakHour)}:{String(Math.round((solarSouthPeakHour % 1) * 60)).padStart(2, '0')}</span>
+                  </label>
+                  <input type="range" min="0" max="24" step="0.5" value={solarSouthPeakHour} onChange={e => setSolarSouthPeakHour(e.target.value)} style={{ width: '100%', accentColor: 'hsl(38, 92%, 70%)' }} />
+                </div>
+                
+                <div className="form-group">
+                  <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Kurvenbreite (Stunden)</span>
+                    <span style={{ fontWeight: 'bold' }}>{solarSouthCurveWidth} h</span>
+                  </label>
+                  <input type="range" min="0.5" max="8" step="0.1" value={solarSouthCurveWidth} onChange={e => setSolarSouthCurveWidth(e.target.value)} style={{ width: '100%', accentColor: 'hsl(38, 92%, 70%)' }} />
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Dashboard Settings */}
