@@ -180,7 +180,7 @@ function AnalyticsContent() {
             unit="kWh"
             variant="solar"
             trend={trends?.trend_exported_pct}
-            trendInvert={true}
+            trendInvert={enableFeedin}
             detail={
               <>
                 <div>{enableFeedin ? `Ersparnis im Zeitraum: ${(totalExported * tariff).toFixed(2)} €` : 'Einspeisevergütung deaktiviert'}</div>
