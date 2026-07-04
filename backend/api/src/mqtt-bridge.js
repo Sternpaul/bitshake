@@ -35,6 +35,8 @@ export function getSolarData() {
  * and writes readings to TimescaleDB.
  */
 export function startMqttBridge() {
+  loadInitialSettings();
+
   const options = {
     clientId: `bitshake-api-${Date.now()}`,
     clean: true,

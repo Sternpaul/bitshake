@@ -135,10 +135,10 @@ function DashboardContent() {
           <KPICard
             icon="☀️"
             label="Solarproduktion (Marstek)"
-            value={overview?.inverter_stats ? formatNumber(overview.inverter_stats.dailyEnergy) : '—'}
+            value={overview?.inverter_stats ? formatNumber(overview.inverter_stats.dailyEnergy, 2) : '—'}
             unit="kWh"
             variant="solar"
-            detail={overview?.inverter_stats ? `Monat: ${formatNumber(overview.inverter_stats.monthlyEnergy)} kWh | Gesamt: ${formatNumber(overview.inverter_stats.totalEnergy)} kWh` : 'Keine Daten'}
+            detail={overview?.inverter_stats ? `Monat: ${formatNumber(overview.inverter_stats.monthlyEnergy, 2)} kWh | Gesamt: ${formatNumber(overview.inverter_stats.totalEnergy, 2)} kWh` : 'Keine Daten'}
             loading={loading}
           />
           <KPICard
