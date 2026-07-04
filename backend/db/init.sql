@@ -16,7 +16,9 @@ CREATE TABLE IF NOT EXISTS meter_readings (
     power_current   DOUBLE PRECISION,   -- 1-0:16.7.0 Instantaneous power (W)
     power_l1        DOUBLE PRECISION,   -- 1-0:36.7.0 Phase 1 power (W)
     power_l2        DOUBLE PRECISION,   -- 1-0:56.7.0 Phase 2 power (W)
-    power_l3        DOUBLE PRECISION    -- 1-0:76.7.0 Phase 3 power (W)
+    power_l3        DOUBLE PRECISION,   -- 1-0:76.7.0 Phase 3 power (W)
+    solar_power     DOUBLE PRECISION,
+    solar_energy_daily DOUBLE PRECISION
 );
 
 SELECT create_hypertable('meter_readings', 'time', if_not_exists => TRUE);

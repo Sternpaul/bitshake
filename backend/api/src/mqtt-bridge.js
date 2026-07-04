@@ -52,13 +52,15 @@ export function startMqttBridge() {
 
   client.on('message', async (topic, message) => {
     try {
-      const payload = JSON.parse(message.toString());
-      lastRawPayload = payload;
-      
-      // Log all messages matching our Marstek keywords to discover the exact data format!
-      if (topic.includes('009b0805d1da') || topic.includes('hm2mqtt') || topic.includes('hame')) {
-         console.log(`[MQTT] Discovered Marstek data on ${topic}:`, payload);
+      const msgStr = message.toString();
+      let payload = null;
+      try {
+        payload = JSON.parse(msgStr);
+      } catch (e) {
+        // Not a JSON payload, probably an availability string like "online"
+        payload = msgStr;
       }
+      lastRawPayload = payload;
       
       await processReading(payload, topic);
     } catch (err) {
@@ -99,22 +101,27 @@ export function startMqttBridge() {
  */
 async function processReading(payload, topic) {
   // --- hm2mqtt / Marstek Integration ---
-  // hm2mqtt publishes values individually to topics like:
-  // homeassistant/sensor/HMI-1_009b0805d1da_active_power/state
-  if (topic.startsWith('homeassistant/')) {
-    if (topic.includes('active_power') || topic.includes('total_power')) {
-      let powerVal = null;
-      if (typeof payload === 'number') {
-        powerVal = payload;
-      } else if (typeof payload === 'string' && !isNaN(parseFloat(payload))) {
-        powerVal = parseFloat(payload);
-      } else if (payload && payload.value !== undefined) {
-        powerVal = parseFloat(payload.value);
-      }
-      if (powerVal !== null) {
-        console.log(`[MQTT] Received Marstek Solar Data: ${powerVal}W from ${topic}`);
-        lastRawPayload = { marstekTopic: topic, marstekValue: powerVal };
-      }
+  if (topic.includes('hm2mqtt') && topic.endsWith('/data')) {
+    if (typeof payload === 'object' && payload !== null) {
+      // The payload contains the full JSON state of the inverter!
+      console.log(`[MQTT] Received Marstek Data:`, payload);
+      
+      const time = new Date();
+      // Combine pv1Power and pv2Power if they exist
+      const pv1 = parseFloat(payload.pv1Power || 0);
+      const pv2 = parseFloat(payload.pv2Power || 0);
+      const totalSolarPower = pv1 + pv2;
+      const dailyEnergy = parseFloat(payload.dailyEnergyGenerated || 0);
+      
+      // We insert a row with JUST the solar data. The grid data will be null.
+      // TimescaleDB allows us to coalesce or aggregate these smoothly over time.
+      await query(
+        `INSERT INTO meter_readings (time, solar_power, solar_energy_daily)
+         VALUES ($1, $2, $3)`,
+        [time, totalSolarPower, dailyEnergy]
+      );
+      
+      console.log(`[DB] Inserted Solar Reading: ${totalSolarPower}W`);
     }
     return;
   }

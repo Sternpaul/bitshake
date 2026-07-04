@@ -86,6 +86,15 @@ fastify.get('/api/health', {
 // ── Start Server ────────────────────────────────────────────
 const start = async () => {
   try {
+    // Run database migrations
+    const { query } = await import('./db.js');
+    await query(`
+      ALTER TABLE meter_readings 
+      ADD COLUMN IF NOT EXISTS solar_power DOUBLE PRECISION,
+      ADD COLUMN IF NOT EXISTS solar_energy_daily DOUBLE PRECISION
+    `);
+    console.log('[DB] Migrations applied successfully');
+
     // Start MQTT bridge
     startMqttBridge();
 
