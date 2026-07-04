@@ -73,7 +73,7 @@ export default function WeeklyEnergyChart({ data = [], loading }) {
             <Bar
               dataKey="exported"
               name="Einspeisung"
-              fill="hsl(38, 92%, 55%)"
+              fill="var(--success)"
               radius={[4, 4, 0, 0]}
               maxBarSize={40}
             />

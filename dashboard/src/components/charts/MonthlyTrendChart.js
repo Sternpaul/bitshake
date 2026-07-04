@@ -52,8 +52,8 @@ export default function MonthlyTrendChart({ data = [], loading }) {
                 <stop offset="95%" stopColor="hsl(210, 100%, 60%)" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="monthExport" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(38, 92%, 55%)" stopOpacity={0.2} />
-                <stop offset="95%" stopColor="hsl(38, 92%, 55%)" stopOpacity={0} />
+                <stop offset="5%" stopColor="hsl(150, 80%, 45%)" stopOpacity={0.2} />
+                <stop offset="95%" stopColor="hsl(150, 80%, 45%)" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="monthSolar" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="hsl(38, 92%, 55%)" stopOpacity={0.7} />
@@ -88,7 +88,7 @@ export default function MonthlyTrendChart({ data = [], loading }) {
               type="monotone"
               dataKey="exported"
               name="Einspeisung"
-              stroke="hsl(38, 92%, 55%)"
+              stroke="var(--success)"
               fill="url(#monthExport)"
               strokeWidth={2}
               dot={showDots ? { r: 3, fill: 'var(--bg-card)' } : false}

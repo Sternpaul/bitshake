@@ -61,7 +61,7 @@ export default function HourlyProfileChart({ data = [], loading, rangeLabel = ''
             <Bar
               dataKey="avg_export_w"
               name="Ø Einspeisung"
-              fill="hsl(38, 92%, 55%)"
+              fill="var(--success)"
               radius={[4, 4, 0, 0]}
               maxBarSize={40}
             />
