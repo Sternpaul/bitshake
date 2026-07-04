@@ -52,7 +52,7 @@ export default function LiveSolarChart({ data = [], loading }) {
 
   return (
     <div className="chart-card full-width" style={{ marginTop: 'var(--space-6)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="chart-header-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <div className="chart-title">Solarproduktion</div>
           <div className="chart-subtitle">Letzte 30 Minuten</div>

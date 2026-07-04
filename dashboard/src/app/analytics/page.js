@@ -10,6 +10,7 @@ import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, R
 import HourlyProfileChart from '@/components/charts/HourlyProfileChart';
 import WeeklyHeatmap from '@/components/charts/WeeklyHeatmap';
 import KPICard from '@/components/cards/KPICard';
+import BottomNav from '@/components/layout/BottomNav';
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload || payload.length === 0) return null;
@@ -345,6 +346,7 @@ function AnalyticsContent() {
           />
         </div>
       </main>
+      <BottomNav />
     </div>
   );
 }

@@ -57,16 +57,18 @@ export default function Header() {
         <span className={`status-dot ${isOnline ? '' : 'offline'}`} />
         <span>
           {isOnline ? 'System Online' : 'Verbinde...'}
-          {mqttConnected !== undefined && (
-            <span style={{ marginLeft: '12px', opacity: 0.7 }}>
-              {mqttConnected ? '📡 MQTT Verbunden' : '📡 MQTT Offline'}
-            </span>
-          )}
-          {mqttConnected !== undefined && (
-            <span style={{ marginLeft: '12px', opacity: 0.7 }}>
-              {deviceActive ? '🔌 Bitshake Aktiv' : '🔌 Bitshake wartet...'}
-            </span>
-          )}
+          <span className="header-status-detail">
+            {mqttConnected !== undefined && (
+              <span style={{ marginLeft: '12px', opacity: 0.7 }}>
+                {mqttConnected ? '📡 MQTT Verbunden' : '📡 MQTT Offline'}
+              </span>
+            )}
+            {mqttConnected !== undefined && (
+              <span style={{ marginLeft: '12px', opacity: 0.7 }}>
+                {deviceActive ? '🔌 Bitshake Aktiv' : '🔌 Bitshake wartet...'}
+              </span>
+            )}
+          </span>
         </span>
       </div>
 

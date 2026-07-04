@@ -77,7 +77,7 @@ export default function WeeklyHeatmap({ data = [], loading, rangeLabel = '' }) {
           </div>
         )}
 
-        <div style={{ minWidth: '600px', display: 'flex', flexDirection: 'column', gap: '4px', paddingTop: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', paddingTop: '20px' }}>
           
           {/* X Axis Header (Hours) */}
           <div style={{ display: 'flex', marginLeft: '40px' }}>

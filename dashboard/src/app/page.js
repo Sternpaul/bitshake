@@ -12,6 +12,7 @@ import LiveSolarChart from '@/components/charts/LiveSolarChart';
 import DailyPowerCurve from '@/components/charts/DailyPowerCurve';
 import WeeklyEnergyChart from '@/components/charts/WeeklyEnergyChart';
 import MonthlyTrendChart from '@/components/charts/MonthlyTrendChart';
+import BottomNav from '@/components/layout/BottomNav';
 
 function DashboardContent() {
   const router = useRouter();
@@ -208,6 +209,7 @@ function DashboardContent() {
           </div>
         )}
       </main>
+      <BottomNav />
     </div>
   );
 }

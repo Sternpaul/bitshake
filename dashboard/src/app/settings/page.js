@@ -6,6 +6,7 @@ import { isAuthenticated, api } from '@/lib/api';
 import { AuthProvider } from '@/lib/auth-context';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
+import BottomNav from '@/components/layout/BottomNav';
 
 function SettingsContent() {
   const router = useRouter();
@@ -607,6 +608,7 @@ function SettingsContent() {
           </div>
         </div>
       </main>
+      <BottomNav />
     </div>
   );
 }

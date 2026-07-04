@@ -6,6 +6,8 @@ const cspHeader = `
     font-src 'self' https://fonts.gstatic.com;
     img-src 'self' blob: data:;
     connect-src 'self' http://localhost:* https://*.sternpaul.top;
+    worker-src 'self';
+    manifest-src 'self';
     object-src 'none';
     base-uri 'self';
     form-action 'self';
