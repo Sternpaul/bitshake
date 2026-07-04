@@ -208,19 +208,19 @@ export default async function statsRoutes(fastify) {
 
       const p1c = parseFloat(c.period1_consumed || 0);
       const p2c = parseFloat(p.period2_consumed || 0);
-      const trendConsumedPct = p2c > 0 ? ((p1c - p2c) / p2c) * 100 : 0;
+      const trendConsumedPct = p2c > 0 ? ((p1c - p2c) / p2c) * 100 : null;
       
       const p1e = parseFloat(c.period1_exported || 0);
       const p2e = parseFloat(p.period2_exported || 0);
-      const trendExportedPct = p2e > 0 ? ((p1e - p2e) / p2e) * 100 : 0;
+      const trendExportedPct = p2e > 0 ? ((p1e - p2e) / p2e) * 100 : null;
       
       const p1g = parseFloat(c.period1_generated || 0);
       const p2g = parseFloat(p.period2_generated || 0);
-      const trendGeneratedPct = p2g > 0 ? ((p1g - p2g) / p2g) * 100 : 0;
+      const trendGeneratedPct = p2g > 0 ? ((p1g - p2g) / p2g) * 100 : null;
 
       const p1ge = parseFloat(c.period1_generated_estimated || 0);
       const p2ge = parseFloat(p.period2_generated_estimated || 0);
-      const trendGeneratedEstimatedPct = p2ge > 0 ? ((p1ge - p2ge) / p2ge) * 100 : 0;
+      const trendGeneratedEstimatedPct = p2ge > 0 ? ((p1ge - p2ge) / p2ge) * 100 : null;
 
       return reply.send({
         current: { consumed: p1c, exported: p1e, generated: p1g, generated_estimated: p1ge },
