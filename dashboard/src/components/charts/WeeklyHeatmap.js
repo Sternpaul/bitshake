@@ -28,20 +28,25 @@ export default function WeeklyHeatmap({ data = [], loading, rangeLabel = '' }) {
     });
   });
 
-  // Color interpolator (from faint red/blue to strong red)
-  // Let's use a red scale since this is consumption
-  const getColor = (val) => {
-    if (val === 0) return 'rgba(255,255,255,0.02)';
+  // Multi-color "Plasma" inspired palette
+  // Purple (Low) -> Pink -> Red -> Orange -> Yellow (High)
+  const getColor = (val, solid = false) => {
+    if (val === 0) return solid ? 'var(--text-tertiary)' : 'var(--bg-glass)';
     
     // Normalize between 0 and 1
-    const intensity = Math.min(1, Math.max(0.1, val / maxVal));
+    const intensity = Math.min(1, Math.max(0, val / maxVal));
     
-    // Convert to HSL: Red (0), varying lightness and saturation
-    // 0.1 intensity = faint pink/dark red, 1.0 intensity = bright red
-    const lightness = 60 - (intensity * 20); // 60% down to 40%
-    const alpha = 0.2 + (intensity * 0.8); // 0.2 up to 1.0
+    // Hue goes from 280 (Purple) to 60 (Yellow)
+    const hue = Math.floor((280 + (intensity * 140)) % 360);
     
-    return `hsla(350, 80%, ${lightness}%, ${alpha})`;
+    // Lightness goes from dark/rich (40%) to bright (60%)
+    const lightness = 40 + (intensity * 20);
+    
+    if (solid) return `hsl(${hue}, 90%, ${lightness + 10}%)`;
+    
+    // Alpha gives a softer look to lower values
+    const alpha = 0.3 + (intensity * 0.7);
+    return `hsla(${hue}, 90%, ${lightness}%, ${alpha})`;
   };
 
   return (
@@ -61,7 +66,7 @@ export default function WeeklyHeatmap({ data = [], loading, rangeLabel = '' }) {
             transform: 'translateX(-50%)'
           }}>
             <div className="label">{DAYS[hoveredCell.day]} um {String(hoveredCell.hour).padStart(2, '0')}:00</div>
-            <div className="value" style={{ color: 'hsl(350, 100%, 70%)' }}>
+            <div className="value" style={{ color: getColor(hoveredCell.value, true) }}>
               Ø {Math.round(hoveredCell.value)} W
             </div>
           </div>
