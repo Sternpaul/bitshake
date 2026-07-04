@@ -39,7 +39,7 @@ function SettingsContent() {
 
   const updateVirtualArray = (id, field, value) => {
     setSolarVirtualArrays(solarVirtualArrays.map(arr => 
-      arr.id === id ? { ...arr, [field]: field === 'name' ? value : Number(value) } : arr
+      arr.id === id ? { ...arr, [field]: ['name', 'shade'].includes(field) ? value : Number(value) } : arr
     ));
   };
 
