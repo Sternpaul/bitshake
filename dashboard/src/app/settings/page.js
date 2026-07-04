@@ -298,20 +298,32 @@ function SettingsContent() {
                     <input type="range" min="0" max="3000" step="10" value={arr.capacity} onChange={e => updateVirtualArray(arr.id, 'capacity', e.target.value)} style={{ width: '100%', accentColor: 'hsl(38, 92%, 70%)' }} />
                   </div>
                   
-                  <div className="form-group">
-                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Sonnenhöchststand (Uhrzeit)</span>
-                      <span style={{ fontWeight: 'bold' }}>{Math.floor(arr.peakHour)}:{String(Math.round((arr.peakHour % 1) * 60)).padStart(2, '0')}</span>
-                    </label>
-                    <input type="range" min="0" max="24" step="0.5" value={arr.peakHour} onChange={e => updateVirtualArray(arr.id, 'peakHour', e.target.value)} style={{ width: '100%', accentColor: 'hsl(38, 92%, 70%)' }} />
+                  <div className="form-group" style={{ marginTop: 'var(--space-4)' }}>
+                    <label className="form-label">Ausrichtung (Himmelsrichtung)</label>
+                    <select 
+                      className="form-select" 
+                      value={arr.peakHour} 
+                      onChange={e => updateVirtualArray(arr.id, 'peakHour', e.target.value)}
+                    >
+                      <option value="9.5">🌅 Ost (ca. 09:30)</option>
+                      <option value="11.0">↘️ Süd-Ost (ca. 11:00)</option>
+                      <option value="12.5">☀️ Süd (ca. 12:30)</option>
+                      <option value="14.0">↙️ Süd-West (ca. 14:00)</option>
+                      <option value="15.5">🌇 West (ca. 15:30)</option>
+                    </select>
                   </div>
                   
                   <div className="form-group">
-                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Kurvenbreite (Stunden)</span>
-                      <span style={{ fontWeight: 'bold' }}>{arr.curveWidth} h</span>
-                    </label>
-                    <input type="range" min="0.5" max="8" step="0.1" value={arr.curveWidth} onChange={e => updateVirtualArray(arr.id, 'curveWidth', e.target.value)} style={{ width: '100%', accentColor: 'hsl(38, 92%, 70%)' }} />
+                    <label className="form-label">Neigung (Winkel)</label>
+                    <select 
+                      className="form-select" 
+                      value={arr.curveWidth} 
+                      onChange={e => updateVirtualArray(arr.id, 'curveWidth', e.target.value)}
+                    >
+                      <option value="4.0">🟦 Flachdach (0-15°)</option>
+                      <option value="3.0">🏠 Schrägdach (30-45°)</option>
+                      <option value="2.0">🏢 Balkon vertikal (70-90°)</option>
+                    </select>
                   </div>
                 </div>
               ))}
@@ -349,19 +361,31 @@ function SettingsContent() {
                     </div>
                     
                     <div className="form-group">
-                      <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span>Höchststand</span>
-                        <span style={{ fontWeight: 'bold' }}>{Math.floor(solarReferenceArray.peakHour)}:{String(Math.round((solarReferenceArray.peakHour % 1) * 60)).padStart(2, '0')}</span>
-                      </label>
-                      <input type="range" min="0" max="24" step="0.5" value={solarReferenceArray.peakHour} onChange={e => setSolarReferenceArray({...solarReferenceArray, peakHour: Number(e.target.value)})} style={{ width: '100%', accentColor: 'var(--solar)' }} />
+                      <label className="form-label">Ausrichtung</label>
+                      <select 
+                        className="form-select" 
+                        value={solarReferenceArray.peakHour} 
+                        onChange={e => setSolarReferenceArray({...solarReferenceArray, peakHour: Number(e.target.value)})}
+                      >
+                        <option value="9.5">🌅 Ost</option>
+                        <option value="11.0">↘️ Süd-Ost</option>
+                        <option value="12.5">☀️ Süd</option>
+                        <option value="14.0">↙️ Süd-West</option>
+                        <option value="15.5">🌇 West</option>
+                      </select>
                     </div>
                     
                     <div className="form-group">
-                      <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span>Kurvenbreite</span>
-                        <span style={{ fontWeight: 'bold' }}>{solarReferenceArray.curveWidth} h</span>
-                      </label>
-                      <input type="range" min="0.5" max="8" step="0.1" value={solarReferenceArray.curveWidth} onChange={e => setSolarReferenceArray({...solarReferenceArray, curveWidth: Number(e.target.value)})} style={{ width: '100%', accentColor: 'var(--solar)' }} />
+                      <label className="form-label">Neigung</label>
+                      <select 
+                        className="form-select" 
+                        value={solarReferenceArray.curveWidth} 
+                        onChange={e => setSolarReferenceArray({...solarReferenceArray, curveWidth: Number(e.target.value)})}
+                      >
+                        <option value="4.0">🟦 Flachdach (0-15°)</option>
+                        <option value="3.0">🏠 Schrägdach (30-45°)</option>
+                        <option value="2.0">🏢 Balkon vertikal (70-90°)</option>
+                      </select>
                     </div>
                   </div>
                 </div>
