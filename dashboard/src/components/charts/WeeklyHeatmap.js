@@ -28,19 +28,20 @@ export default function WeeklyHeatmap({ data = [], loading, rangeLabel = '' }) {
     });
   });
 
-  // Simple "Cold to Hot" palette
-  // Blue (Cold/Low) -> Green -> Yellow -> Red (Hot/High)
+  // Simple "Blue to Red" palette
+  // Blue (Cold/Low) -> Purple/Magenta (Mid) -> Red (Hot/High)
   const getColor = (val, solid = false) => {
     if (val === 0) return solid ? 'var(--text-tertiary)' : 'var(--bg-glass)';
     
     // Normalize between 0 and 1
     const intensity = Math.min(1, Math.max(0, val / maxVal));
     
-    // Hue goes from 240 (Blue) down to 0 (Red)
-    const hue = Math.floor(240 - (intensity * 240));
+    // Hue goes from 240 (Blue) UP to 360 (Red)
+    // This perfectly cuts out green, yellow, and cyan.
+    const hue = Math.floor(240 + (intensity * 120));
     
-    // Keep lightness around 50% for vivid colors
-    const lightness = solid ? 50 : 45 + (intensity * 10);
+    // Keep lightness around 50-60% for vivid colors
+    const lightness = solid ? 55 : 45 + (intensity * 10);
     
     if (solid) return `hsl(${hue}, 90%, ${lightness}%)`;
     
