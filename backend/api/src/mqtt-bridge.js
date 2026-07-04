@@ -151,6 +151,9 @@ async function processReading(payload, topic) {
         
         // The total extrapolation factor is total capacity ratio = 1450 / 800 = 1.8125
         capacityMultiplier = 1450 / 800;
+        console.log(`[DEBUG-SOLAR] ESTIMATION ON: measuredEast=${measuredEast}, theoEast=${theoEast.toFixed(1)}, theoSouth=${theoSouth.toFixed(1)}, ratio=${ratio.toFixed(2)}, estimatedSouth=${estimatedSouth.toFixed(1)}, totalSolarPower=${totalSolarPower}`);
+      } else {
+        console.log(`[DEBUG-SOLAR] ESTIMATION OFF: measuredEast=${measuredEast}, totalSolarPower=${totalSolarPower}`);
       }
       
       const measuredDaily = parseFloat(payload.dailyEnergyGenerated || 0);
