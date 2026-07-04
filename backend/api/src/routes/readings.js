@@ -87,7 +87,9 @@ export default async function readingsRoutes(fastify) {
               MAX(power_current) AS max_power,
               MIN(power_current) AS min_power,
               LAST(total_import, time) - FIRST(total_import, time) AS consumed_kwh,
-              LAST(total_export, time) - FIRST(total_export, time) AS exported_kwh
+              LAST(total_export, time) - FIRST(total_export, time) AS exported_kwh,
+              LAST(solar_energy_total, time) - FIRST(solar_energy_total, time) AS generated_kwh,
+              LAST(solar_estimated_total, time) - FIRST(solar_estimated_total, time) AS generated_estimated_kwh
             FROM meter_readings
             WHERE time >= NOW() - INTERVAL '24 hours'
             GROUP BY bucket
@@ -106,7 +108,9 @@ export default async function readingsRoutes(fastify) {
               MAX(power_current) AS max_power,
               MIN(power_current) AS min_power,
               LAST(total_import, time) - FIRST(total_import, time) AS consumed_kwh,
-              LAST(total_export, time) - FIRST(total_export, time) AS exported_kwh
+              LAST(total_export, time) - FIRST(total_export, time) AS exported_kwh,
+              LAST(solar_energy_total, time) - FIRST(solar_energy_total, time) AS generated_kwh,
+              LAST(solar_estimated_total, time) - FIRST(solar_estimated_total, time) AS generated_estimated_kwh
             FROM meter_readings
             WHERE time >= NOW() - INTERVAL '7 days'
             GROUP BY bucket
@@ -125,7 +129,9 @@ export default async function readingsRoutes(fastify) {
               MAX(power_current) AS max_power,
               MIN(power_current) AS min_power,
               LAST(total_import, time) - FIRST(total_import, time) AS consumed_kwh,
-              LAST(total_export, time) - FIRST(total_export, time) AS exported_kwh
+              LAST(total_export, time) - FIRST(total_export, time) AS exported_kwh,
+              LAST(solar_energy_total, time) - FIRST(solar_energy_total, time) AS generated_kwh,
+              LAST(solar_estimated_total, time) - FIRST(solar_estimated_total, time) AS generated_estimated_kwh
             FROM meter_readings
             WHERE time >= NOW() - INTERVAL '30 days'
             GROUP BY bucket
@@ -144,7 +150,9 @@ export default async function readingsRoutes(fastify) {
               MAX(power_current) AS max_power,
               MIN(power_current) AS min_power,
               LAST(total_import, time) - FIRST(total_import, time) AS consumed_kwh,
-              LAST(total_export, time) - FIRST(total_export, time) AS exported_kwh
+              LAST(total_export, time) - FIRST(total_export, time) AS exported_kwh,
+              LAST(solar_energy_total, time) - FIRST(solar_energy_total, time) AS generated_kwh,
+              LAST(solar_estimated_total, time) - FIRST(solar_estimated_total, time) AS generated_estimated_kwh
             FROM meter_readings
             WHERE time >= NOW() - INTERVAL '1 year'
             GROUP BY bucket
