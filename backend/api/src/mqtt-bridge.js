@@ -117,9 +117,6 @@ async function processReading(payload, topic) {
   // --- hm2mqtt / Marstek Integration ---
   if (topic.includes('hm2mqtt') && topic.endsWith('/data')) {
     if (typeof payload === 'object' && payload !== null) {
-      // The payload contains the full JSON state of the inverter!
-      console.log(`[MQTT] Received Marstek Data:`, payload);
-      
       const time = new Date();
       // Combine pv1Power and pv2Power if they exist
       const pv1 = parseFloat(payload.pv1Power || 0);
