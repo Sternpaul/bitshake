@@ -8,6 +8,7 @@ import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import KPICard from '@/components/cards/KPICard';
 import LivePowerChart from '@/components/charts/LivePowerChart';
+import LiveSolarChart from '@/components/charts/LiveSolarChart';
 import DailyPowerCurve from '@/components/charts/DailyPowerCurve';
 import WeeklyEnergyChart from '@/components/charts/WeeklyEnergyChart';
 import MonthlyTrendChart from '@/components/charts/MonthlyTrendChart';
@@ -103,7 +104,14 @@ function DashboardContent() {
             value={current ? `${Math.abs(Math.round(current.power))}` : '—'}
             unit="W"
             variant={current?.power < 0 ? 'solar' : 'consumption'}
-            detail={current ? (current.power < 0 ? '↑ Einspeisung ins Netz' : '↓ Bezug aus dem Netz') : 'Warte auf Daten...'}
+            detail={current ? (
+              <span style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span>{current.power < 0 ? '↑ Einspeisung ins Netz' : '↓ Bezug aus dem Netz'}</span>
+                {current.solar_power > 0 && (
+                  <span style={{ color: 'var(--solar)' }}>☀️ {Math.round(current.solar_power)} W Solar</span>
+                )}
+              </span>
+            ) : 'Warte auf Daten...'}
             loading={loading}
           />
           <KPICard
@@ -155,6 +163,7 @@ function DashboardContent() {
 
         {/* Charts */}
         <LivePowerChart data={recentData} loading={loading} />
+        <LiveSolarChart data={recentData} loading={loading} />
 
         <div className="chart-grid" style={{ marginTop: 'var(--space-6)' }}>
           <DailyPowerCurve data={todayData} loading={loading} />

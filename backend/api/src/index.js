@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import fs from 'fs';
+import path from 'path';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
@@ -76,7 +78,8 @@ fastify.get('/api/health', {
       connected: mqttStatus.connected,
       messages_processed: mqttStatus.messageCount,
       last_reading_at: mqttStatus.lastReading?.time || null,
-      last_raw_payload: mqttStatus.lastRawPayload || null,
+      last_raw_payload_grid: mqttStatus.lastRawPayloadGrid || null,
+      last_raw_payload_solar: mqttStatus.lastRawPayloadSolar || null,
     },
   });
 });
@@ -88,6 +91,17 @@ const start = async () => {
   try {
     // Start MQTT bridge
     startMqttBridge();
+
+    // Run migration
+    try {
+      const { query } = await import('./db.js');
+      const migrationSql = fs.readFileSync(path.join(process.cwd(), '../db/add_solar_total.sql'), 'utf8');
+      console.log('[DB] Running solar migration script...');
+      await query(migrationSql);
+      console.log('[DB] Solar migration complete.');
+    } catch (e) {
+      console.warn('[DB] Migration failed (it may have already run or file missing):', e.message);
+    }
 
     // Start HTTP server
     await fastify.listen({ port: PORT, host: HOST });

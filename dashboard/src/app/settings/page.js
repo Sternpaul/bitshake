@@ -36,6 +36,7 @@ function SettingsContent() {
 
   // Device Data
   const [healthData, setHealthData] = useState(null);
+  const [activeRawTab, setActiveRawTab] = useState('grid');
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -371,7 +372,36 @@ function SettingsContent() {
           <div className="settings-card" style={{ gridColumn: '1 / -1' }}>
             <div className="settings-card-title">📡 Gerätediagnose (Rohdaten)</div>
             <div className="form-hint" style={{ marginBottom: 'var(--space-4)' }}>
-              Hier sehen Sie die ungefilterten Live-Daten, die Ihr Bitshake/Tasmota-Lesekopf an den Server sendet.
+              Hier sehen Sie die ungefilterten Live-Daten, die Ihr Bitshake/Tasmota-Lesekopf und der Marstek-Wechselrichter an den Server senden.
+            </div>
+            
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+              <button 
+                onClick={() => setActiveRawTab('grid')}
+                style={{
+                  padding: '4px 12px',
+                  background: activeRawTab === 'grid' ? 'var(--primary)' : 'var(--surface-sunken)',
+                  color: activeRawTab === 'grid' ? 'white' : 'var(--text-secondary)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                Stromzähler (Grid)
+              </button>
+              <button 
+                onClick={() => setActiveRawTab('solar')}
+                style={{
+                  padding: '4px 12px',
+                  background: activeRawTab === 'solar' ? 'var(--solar)' : 'var(--surface-sunken)',
+                  color: activeRawTab === 'solar' ? 'white' : 'var(--text-secondary)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                Solaranlage (Marstek)
+              </button>
             </div>
             
             <div style={{
@@ -385,9 +415,13 @@ function SettingsContent() {
               overflowX: 'auto',
               color: 'var(--text-secondary)'
             }}>
-              {healthData?.mqtt?.last_raw_payload 
-                ? JSON.stringify(healthData.mqtt.last_raw_payload, null, 2) 
-                : 'Warte auf Daten...'}
+              {activeRawTab === 'grid' 
+                ? (healthData?.mqtt?.last_raw_payload_grid 
+                    ? JSON.stringify(healthData.mqtt.last_raw_payload_grid, null, 2) 
+                    : 'Warte auf Grid-Daten...')
+                : (healthData?.mqtt?.last_raw_payload_solar 
+                    ? JSON.stringify(healthData.mqtt.last_raw_payload_solar, null, 2) 
+                    : 'Warte auf Solar-Daten...')}
             </div>
           </div>
         </div>

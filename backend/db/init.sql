@@ -17,8 +17,8 @@ CREATE TABLE IF NOT EXISTS meter_readings (
     power_l1        DOUBLE PRECISION,   -- 1-0:36.7.0 Phase 1 power (W)
     power_l2        DOUBLE PRECISION,   -- 1-0:56.7.0 Phase 2 power (W)
     power_l3        DOUBLE PRECISION,   -- 1-0:76.7.0 Phase 3 power (W)
-    solar_power     DOUBLE PRECISION,
-    solar_energy_daily DOUBLE PRECISION
+    solar_energy_daily DOUBLE PRECISION,
+    solar_energy_total DOUBLE PRECISION
 );
 
 SELECT create_hypertable('meter_readings', 'time', if_not_exists => TRUE);
@@ -68,6 +68,7 @@ SELECT
     MIN(power_current)                                      AS min_power,
     LAST(total_import, time) - FIRST(total_import, time)    AS consumed_kwh,
     LAST(total_export, time) - FIRST(total_export, time)    AS exported_kwh,
+    LAST(solar_energy_total, time) - FIRST(solar_energy_total, time) AS generated_kwh,
     COUNT(*)                                                AS sample_count
 FROM meter_readings
 GROUP BY bucket
@@ -83,6 +84,7 @@ SELECT
     MIN(power_current)                                      AS min_power,
     LAST(total_import, time) - FIRST(total_import, time)    AS consumed_kwh,
     LAST(total_export, time) - FIRST(total_export, time)    AS exported_kwh,
+    LAST(solar_energy_total, time) - FIRST(solar_energy_total, time) AS generated_kwh,
     COUNT(*)                                                AS sample_count
 FROM meter_readings
 GROUP BY bucket

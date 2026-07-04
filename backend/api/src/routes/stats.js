@@ -25,7 +25,7 @@ export default async function statsRoutes(fastify) {
 
       // Latest reading
       const latestResult = await query(
-        `SELECT time, total_import, total_export, power_current, power_l1, power_l2, power_l3
+        `SELECT time, total_import, total_export, power_current, power_l1, power_l2, power_l3, solar_power
          FROM meter_readings ORDER BY time DESC LIMIT 1`
       );
 
@@ -38,7 +38,8 @@ export default async function statsRoutes(fastify) {
            AVG(power_current) AS avg_power_today,
            MAX(power_current) AS peak_power_today,
            MIN(power_current) AS min_power_today,
-           COUNT(*) AS readings_today
+           COUNT(*) AS readings_today,
+           LAST(solar_energy_total, time) - FIRST(solar_energy_total, time) AS generated_today
          FROM meter_readings
          WHERE time >= date_trunc('day', NOW())`
       );
@@ -47,7 +48,8 @@ export default async function statsRoutes(fastify) {
       const weekResult = await query(
         `SELECT
            COALESCE(SUM(consumed_kwh), 0) AS consumed_week,
-           COALESCE(SUM(exported_kwh), 0) AS exported_week
+           COALESCE(SUM(exported_kwh), 0) AS exported_week,
+           COALESCE(SUM(generated_kwh), 0) AS generated_week
          FROM daily_energy
          WHERE bucket >= date_trunc('week', NOW())`
       );
@@ -56,7 +58,8 @@ export default async function statsRoutes(fastify) {
       const monthResult = await query(
         `SELECT
            COALESCE(SUM(consumed_kwh), 0) AS consumed_month,
-           COALESCE(SUM(exported_kwh), 0) AS exported_month
+           COALESCE(SUM(exported_kwh), 0) AS exported_month,
+           COALESCE(SUM(generated_kwh), 0) AS generated_month
          FROM daily_energy
          WHERE bucket >= date_trunc('month', NOW())`
       );
@@ -68,11 +71,14 @@ export default async function statsRoutes(fastify) {
 
       const consumedToday = parseFloat(today.consumed_today || 0);
       const exportedToday = parseFloat(today.exported_today || 0);
+      const generatedToday = parseFloat(today.generated_today || 0);
 
       // Net Grid Balance (Netzbilanz)
       // Positive = Net Producer (Export > Import)
       // Negative = Net Consumer (Import > Export)
       const netBalanceKwh = exportedToday - consumedToday;
+      
+      const selfConsumptionToday = generatedToday > 0 ? ((generatedToday - exportedToday) / generatedToday) * 100 : 0;
 
       return reply.send({
         current: latest ? {
@@ -82,6 +88,7 @@ export default async function statsRoutes(fastify) {
           power_l3: latest.power_l3,
           total_import: latest.total_import,
           total_export: latest.total_export,
+          solar_power: latest.solar_power,
           timestamp: latest.time,
         } : null,
         today: {
@@ -91,6 +98,8 @@ export default async function statsRoutes(fastify) {
           peak_power: parseFloat(today.peak_power_today || 0),
           min_power: parseFloat(today.min_power_today || 0),
           net_balance_kwh: netBalanceKwh,
+          generated_kwh: generatedToday,
+          self_consumption_pct: Math.max(0, Math.min(100, selfConsumptionToday)),
           cost: consumedToday * electricityPrice,
           earnings: exportedToday * feedinTariff,
           readings_count: parseInt(today.readings_today || 0),
@@ -98,12 +107,14 @@ export default async function statsRoutes(fastify) {
         week: {
           consumed_kwh: parseFloat(week.consumed_week || 0),
           exported_kwh: parseFloat(week.exported_week || 0),
+          generated_kwh: parseFloat(week.generated_week || 0),
           cost: parseFloat(week.consumed_week || 0) * electricityPrice,
           earnings: parseFloat(week.exported_week || 0) * feedinTariff,
         },
         month: {
           consumed_kwh: parseFloat(month.consumed_month || 0),
           exported_kwh: parseFloat(month.exported_month || 0),
+          generated_kwh: parseFloat(month.generated_month || 0),
           cost: parseFloat(month.consumed_month || 0) * electricityPrice,
           earnings: parseFloat(month.exported_month || 0) * feedinTariff,
         },
@@ -189,7 +200,8 @@ export default async function statsRoutes(fastify) {
       const currentRes = await query(
         `SELECT 
            LAST(total_import, time) - FIRST(total_import, time) AS consumed,
-           LAST(total_export, time) - FIRST(total_export, time) AS exported
+           LAST(total_export, time) - FIRST(total_export, time) AS exported,
+           LAST(solar_energy_total, time) - FIRST(solar_energy_total, time) AS generated
          FROM meter_readings
          WHERE time >= NOW() - $1::interval`,
         [int1]
@@ -198,29 +210,34 @@ export default async function statsRoutes(fastify) {
       const previousRes = await query(
         `SELECT 
            LAST(total_import, time) - FIRST(total_import, time) AS consumed,
-           LAST(total_export, time) - FIRST(total_export, time) AS exported
+           LAST(total_export, time) - FIRST(total_export, time) AS exported,
+           LAST(solar_energy_total, time) - FIRST(solar_energy_total, time) AS generated
          FROM meter_readings
          WHERE time >= NOW() - $2::interval AND time < NOW() - $1::interval`,
         [int2, int1]
       );
 
-      const current = currentRes.rows[0] || { consumed: 0, exported: 0 };
-      const previous = previousRes.rows[0] || { consumed: 0, exported: 0 };
+      const current = currentRes.rows[0] || { consumed: 0, exported: 0, generated: 0 };
+      const previous = previousRes.rows[0] || { consumed: 0, exported: 0, generated: 0 };
 
       const curCons = parseFloat(current.consumed || 0);
       const curExp = parseFloat(current.exported || 0);
+      const curGen = parseFloat(current.generated || 0);
       const prevCons = parseFloat(previous.consumed || 0);
       const prevExp = parseFloat(previous.exported || 0);
+      const prevGen = parseFloat(previous.generated || 0);
 
       // If previous is 0 (or no data), we cannot calculate a trend percentage safely.
       const trendCons = prevCons > 0 ? ((curCons - prevCons) / prevCons) * 100 : null;
       const trendExp = prevExp > 0 ? ((curExp - prevExp) / prevExp) * 100 : null;
+      const trendGen = prevGen > 0 ? ((curGen - prevGen) / prevGen) * 100 : null;
 
       return reply.send({
-        current: { consumed: curCons, exported: curExp },
-        previous: { consumed: prevCons, exported: prevExp },
+        current: { consumed: curCons, exported: curExp, generated: curGen },
+        previous: { consumed: prevCons, exported: prevExp, generated: prevGen },
         trend_consumed_pct: trendCons,
-        trend_exported_pct: trendExp
+        trend_exported_pct: trendExp,
+        trend_generated_pct: trendGen
       });
     } catch (err) {
       request.log.error(err);

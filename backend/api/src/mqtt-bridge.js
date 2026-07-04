@@ -9,7 +9,8 @@ const MQTT_TOPICS = (process.env.MQTT_TOPIC || 'tele/+/SENSOR,hm2mqtt/+/device/+
 
 let client = null;
 let lastReading = null;
-let lastRawPayload = null;
+let lastRawPayloadGrid = null;
+let lastRawPayloadSolar = null;
 let messageCount = 0;
 
 /**
@@ -56,7 +57,11 @@ export function startMqttBridge() {
         // Not a JSON payload, probably an availability string like "online"
         payload = msgStr;
       }
-      lastRawPayload = payload;
+      if (topic.includes('hm2mqtt')) {
+        lastRawPayloadSolar = payload;
+      } else {
+        lastRawPayloadGrid = payload;
+      }
       
       await processReading(payload, topic);
     } catch (err) {
@@ -107,21 +112,40 @@ async function processReading(payload, topic) {
       const pv1 = parseFloat(payload.pv1Power || 0);
       const pv2 = parseFloat(payload.pv2Power || 0);
       
-      // The user has 800W of panels connected to Marstek, and 650W of extra panels.
-      // Total capacity = 1450W. We extrapolate the total generation based on the 800W array's output.
-      const multiplier = 1450 / 800; // 1.8125
-      const measuredSolarPower = pv1 + pv2;
-      const totalSolarPower = Math.round(measuredSolarPower * multiplier);
+      // We have 800W East (vertical) measured via Marstek, and 650W South (35 deg, shaded late PM) unmeasured.
+      // We use a Gaussian time-of-day model to estimate the 650W panels based on the East panels.
+      const hour = time.getHours() + time.getMinutes() / 60;
+      
+      // East peaks at 9:30 AM, South peaks at 12:30 PM
+      const theoEast = 800 * Math.exp(-0.5 * Math.pow((hour - 9.5) / 3.0, 2));
+      const theoSouth = 650 * Math.exp(-0.5 * Math.pow((hour - 12.5) / 3.0, 2));
+      
+      // Prevent division by zero
+      const safeTheoEast = Math.max(theoEast, 50); 
+      
+      // Ratio of expected South to expected East (capped at 4x)
+      const ratio = Math.min(theoSouth / safeTheoEast, 4.0);
+      
+      const measuredEast = pv1 + pv2;
+      const estimatedSouth = Math.min(measuredEast * ratio, 650);
+      const totalSolarPower = Math.round(measuredEast + estimatedSouth);
+      
+      // The measured daily/total is extrapolated using the instantaneous ratio
+      // (This isn't perfect for totals, but it's the best guess without an integral over the day)
+      // A better total extrapolation factor is simply total capacity ratio = 1450 / 800 = 1.8125
+      const capacityMultiplier = 1450 / 800;
       
       const measuredDaily = parseFloat(payload.dailyEnergyGenerated || 0);
-      const dailyEnergy = Number((measuredDaily * multiplier).toFixed(3));
+      const dailyEnergy = Number((measuredDaily * capacityMultiplier).toFixed(3));
       
-      // We insert a row with JUST the solar data. The grid data will be null.
-      // TimescaleDB allows us to coalesce or aggregate these smoothly over time.
+      const measuredTotal = parseFloat(payload.totalEnergyGenerated || 0);
+      const totalEnergy = Number((measuredTotal * capacityMultiplier).toFixed(3));
+      
+      // Insert into TimescaleDB
       await query(
-        `INSERT INTO meter_readings (time, solar_power, solar_energy_daily)
-         VALUES ($1, $2, $3)`,
-        [time, totalSolarPower, dailyEnergy]
+        `INSERT INTO meter_readings (time, solar_power, solar_energy_daily, solar_energy_total)
+         VALUES ($1, $2, $3, $4)`,
+        [time, totalSolarPower, dailyEnergy, totalEnergy]
       );
       
       console.log(`[DB] Inserted Solar Reading: ${totalSolarPower}W`);
@@ -207,7 +231,8 @@ export function getMqttStatus() {
     connected: client?.connected || false,
     messageCount,
     lastReading,
-    lastRawPayload,
+    lastRawPayloadGrid,
+    lastRawPayloadSolar,
   };
 }
 
