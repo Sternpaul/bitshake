@@ -13,7 +13,7 @@ export default function WeeklyHeatmap({ data = [], loading, rangeLabel = '' }) {
       <div className="chart-card full-width">
         <div className="chart-title">Wochen-Heatmap</div>
         <div className="chart-subtitle">Durchschnittlicher Verbrauch nach Wochentag und Stunde</div>
-        <div className="chart-wrapper tall">
+        <div style={{ width: '100%', height: '360px' }}>
           <div className="skeleton" style={{ width: '100%', height: '100%' }} />
         </div>
       </div>
@@ -54,7 +54,7 @@ export default function WeeklyHeatmap({ data = [], loading, rangeLabel = '' }) {
       <div className="chart-title">Wochen-Heatmap</div>
       <div className="chart-subtitle">Durchschnittlicher Verbrauch nach Wochentag und Stunde {rangeLabel ? `— ${rangeLabel}` : ''}</div>
       
-      <div className="chart-wrapper tall" style={{ overflowX: 'auto', paddingRight: '1rem', position: 'relative' }}>
+      <div style={{ width: '100%', overflowX: 'auto', paddingRight: '1rem', paddingBottom: '1rem', position: 'relative' }}>
         
         {hoveredCell && (
           <div className="custom-tooltip" style={{ 
