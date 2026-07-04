@@ -40,11 +40,11 @@ export function startMqttBridge() {
     
     // Subscribe to all topics in our array
     MQTT_TOPICS.forEach(topic => {
-      client.subscribe(topic, { qos: 1 }, (err, granted) => {
+      client.subscribe('#', (err) => {
         if (err) {
-          console.error(`[MQTT] Failed to subscribe to ${topic}:`, err);
+          console.error(`[MQTT] Failed to subscribe to #:`, err);
         } else {
-          console.log(`[MQTT] Subscribed to: ${granted.map(g => g.topic).join(', ')}`);
+          console.log(`[MQTT] Subscribed to: #`);
         }
       });
     });
@@ -54,6 +54,12 @@ export function startMqttBridge() {
     try {
       const payload = JSON.parse(message.toString());
       lastRawPayload = payload;
+      
+      // Log all messages matching our Marstek keywords to discover the exact data format!
+      if (topic.includes('009b0805d1da') || topic.includes('hm2mqtt') || topic.includes('hame')) {
+         console.log(`[MQTT] Discovered Marstek data on ${topic}:`, payload);
+      }
+      
       await processReading(payload, topic);
     } catch (err) {
       console.error('[MQTT] Failed to process message:', err.message);
@@ -96,9 +102,7 @@ async function processReading(payload, topic) {
   // hm2mqtt publishes values individually to topics like:
   // homeassistant/sensor/HMI-1_009b0805d1da_active_power/state
   if (topic.startsWith('homeassistant/')) {
-    // Determine if this is a power reading from our microinverter
     if (topic.includes('active_power') || topic.includes('total_power')) {
-      // The payload is often just a raw number, or a JSON object with a value
       let powerVal = null;
       if (typeof payload === 'number') {
         powerVal = payload;
@@ -107,16 +111,9 @@ async function processReading(payload, topic) {
       } else if (payload && payload.value !== undefined) {
         powerVal = parseFloat(payload.value);
       }
-      
       if (powerVal !== null) {
         console.log(`[MQTT] Received Marstek Solar Data: ${powerVal}W from ${topic}`);
-        // Here we could insert into TimescaleDB, but currently our meter_readings table expects
-        // grid import/export AND power. We might want to just update the solar generation table
-        // or a dedicated solar column. Since our schema only has power_current (which is grid),
-        // we should create a new column or just log it for now to see what the exact topic/payload is.
-        // For now, just log the raw values to ensure we are receiving them correctly on Oracle Cloud.
         lastRawPayload = { marstekTopic: topic, marstekValue: powerVal };
-        return;
       }
     }
     return;
