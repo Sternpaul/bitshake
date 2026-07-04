@@ -231,16 +231,6 @@ function SettingsContent() {
               </select>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', marginTop: 'var(--space-6)' }}>
-              <button
-                className="btn btn-primary"
-                onClick={handleSaveSettings}
-                disabled={saving}
-              >
-                {saving ? '⏳ Speichere...' : '💾 Einstellungen speichern'}
-              </button>
-              {saved && <span className="settings-saved">✅ Gespeichert!</span>}
-            </div>
           </div>
 
           {/* Dashboard Settings */}
@@ -321,6 +311,18 @@ function SettingsContent() {
                 Wenn deaktiviert, werden nur die echten, live gemessenen Marstek-Daten angezeigt.
               </div>
             </div>
+          </div>
+
+          <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: 'var(--space-4)', marginBottom: 'var(--space-8)' }}>
+            <button
+              className="btn btn-primary"
+              onClick={handleSaveSettings}
+              disabled={saving}
+              style={{ padding: '0.75rem 2rem', fontSize: '1.1rem' }}
+            >
+              {saving ? '⏳ Speichere...' : '💾 Alle Einstellungen speichern'}
+            </button>
+            {saved && <span className="settings-saved">✅ Erfolgreich gespeichert!</span>}
           </div>
 
           {/* Password Change */}
