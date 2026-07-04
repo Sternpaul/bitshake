@@ -28,26 +28,30 @@ export default function WeeklyHeatmap({ data = [], loading, rangeLabel = '' }) {
     });
   });
 
-  // Simple "Blue to Red" palette
-  // Blue (Cold/Low) -> Purple/Magenta (Mid) -> Red (Hot/High)
+  // Pure Blue to Red diverging palette (no purple)
+  // Low values: Blue (fading out towards the middle)
+  // High values: Red (fading in from the middle)
   const getColor = (val, solid = false) => {
     if (val === 0) return solid ? 'var(--text-tertiary)' : 'var(--bg-glass)';
     
     // Normalize between 0 and 1
     const intensity = Math.min(1, Math.max(0, val / maxVal));
     
-    // Hue goes from 240 (Blue) UP to 360 (Red)
-    // This perfectly cuts out green, yellow, and cyan.
-    const hue = Math.floor(240 + (intensity * 120));
-    
-    // Keep lightness around 50-60% for vivid colors
-    const lightness = solid ? 55 : 45 + (intensity * 10);
-    
-    if (solid) return `hsl(${hue}, 90%, ${lightness}%)`;
-    
-    // Alpha gives a softer look to lower values
-    const alpha = 0.3 + (intensity * 0.7);
-    return `hsla(${hue}, 90%, ${lightness}%, ${alpha})`;
+    if (intensity < 0.5) {
+      // Lower half: Blue
+      // intensity 0.0 -> alpha 1.0 (Solid Blue)
+      // intensity 0.5 -> alpha 0.0 (Transparent)
+      const alpha = 1.0 - (intensity * 2);
+      if (solid) return 'hsl(210, 90%, 55%)';
+      return `hsla(210, 90%, 55%, ${Math.max(0.05, alpha)})`;
+    } else {
+      // Upper half: Red
+      // intensity 0.5 -> alpha 0.0 (Transparent)
+      // intensity 1.0 -> alpha 1.0 (Solid Red)
+      const alpha = (intensity - 0.5) * 2;
+      if (solid) return 'hsl(0, 90%, 55%)';
+      return `hsla(0, 90%, 55%, ${Math.max(0.05, alpha)})`;
+    }
   };
 
   return (
