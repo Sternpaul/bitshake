@@ -28,21 +28,21 @@ export default function WeeklyHeatmap({ data = [], loading, rangeLabel = '' }) {
     });
   });
 
-  // Multi-color "Plasma" inspired palette
-  // Purple (Low) -> Pink -> Red -> Orange -> Yellow (High)
+  // Simple "Cold to Hot" palette
+  // Blue (Cold/Low) -> Green -> Yellow -> Red (Hot/High)
   const getColor = (val, solid = false) => {
     if (val === 0) return solid ? 'var(--text-tertiary)' : 'var(--bg-glass)';
     
     // Normalize between 0 and 1
     const intensity = Math.min(1, Math.max(0, val / maxVal));
     
-    // Hue goes from 280 (Purple) to 60 (Yellow)
-    const hue = Math.floor((280 + (intensity * 140)) % 360);
+    // Hue goes from 240 (Blue) down to 0 (Red)
+    const hue = Math.floor(240 - (intensity * 240));
     
-    // Lightness goes from dark/rich (40%) to bright (60%)
-    const lightness = 40 + (intensity * 20);
+    // Keep lightness around 50% for vivid colors
+    const lightness = solid ? 50 : 45 + (intensity * 10);
     
-    if (solid) return `hsl(${hue}, 90%, ${lightness + 10}%)`;
+    if (solid) return `hsl(${hue}, 90%, ${lightness}%)`;
     
     // Alpha gives a softer look to lower values
     const alpha = 0.3 + (intensity * 0.7);
