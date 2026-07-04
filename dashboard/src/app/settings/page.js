@@ -306,9 +306,9 @@ function SettingsContent() {
                       onChange={e => updateVirtualArray(arr.id, 'peakHour', e.target.value)}
                     >
                       <option value="9.5">🌅 Ost (ca. 09:30)</option>
-                      <option value="11.0">↘️ Süd-Ost (ca. 11:00)</option>
+                      <option value="11">↘️ Süd-Ost (ca. 11:00)</option>
                       <option value="12.5">☀️ Süd (ca. 12:30)</option>
-                      <option value="14.0">↙️ Süd-West (ca. 14:00)</option>
+                      <option value="14">↙️ Süd-West (ca. 14:00)</option>
                       <option value="15.5">🌇 West (ca. 15:30)</option>
                     </select>
                   </div>
@@ -320,9 +320,9 @@ function SettingsContent() {
                       value={arr.curveWidth} 
                       onChange={e => updateVirtualArray(arr.id, 'curveWidth', e.target.value)}
                     >
-                      <option value="4.0">🟦 Flachdach (0-15°)</option>
-                      <option value="3.0">🏠 Schrägdach (30-45°)</option>
-                      <option value="2.0">🏢 Balkon vertikal (70-90°)</option>
+                      <option value="4">🟦 Flachdach (0-15°)</option>
+                      <option value="3">🏠 Schrägdach (30-45°)</option>
+                      <option value="2">🏢 Balkon vertikal (70-90°)</option>
                     </select>
                   </div>
                 </div>
@@ -368,9 +368,9 @@ function SettingsContent() {
                         onChange={e => setSolarReferenceArray({...solarReferenceArray, peakHour: Number(e.target.value)})}
                       >
                         <option value="9.5">🌅 Ost</option>
-                        <option value="11.0">↘️ Süd-Ost</option>
+                        <option value="11">↘️ Süd-Ost</option>
                         <option value="12.5">☀️ Süd</option>
-                        <option value="14.0">↙️ Süd-West</option>
+                        <option value="14">↙️ Süd-West</option>
                         <option value="15.5">🌇 West</option>
                       </select>
                     </div>
@@ -382,9 +382,9 @@ function SettingsContent() {
                         value={solarReferenceArray.curveWidth} 
                         onChange={e => setSolarReferenceArray({...solarReferenceArray, curveWidth: Number(e.target.value)})}
                       >
-                        <option value="4.0">🟦 Flachdach (0-15°)</option>
-                        <option value="3.0">🏠 Schrägdach (30-45°)</option>
-                        <option value="2.0">🏢 Balkon vertikal (70-90°)</option>
+                        <option value="4">🟦 Flachdach (0-15°)</option>
+                        <option value="3">🏠 Schrägdach (30-45°)</option>
+                        <option value="2">🏢 Balkon vertikal (70-90°)</option>
                       </select>
                     </div>
                   </div>
