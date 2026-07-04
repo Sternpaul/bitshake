@@ -26,6 +26,10 @@ export function setSolarEstimation(enabled) {
   console.log(`[MQTT] Solar estimation set to: ${enabled}`);
 }
 
+export function getSolarData() {
+  return lastSolarData;
+}
+
 /**
  * Start the MQTT bridge — subscribes to Tasmota sensor topics
  * and writes readings to TimescaleDB.
@@ -149,11 +153,14 @@ async function processReading(payload, topic) {
       
       const measuredDaily = parseFloat(payload.dailyEnergyGenerated || 0);
       const dailyEnergy = Number((measuredDaily * capacityMultiplier).toFixed(3));
+
+      const measuredMonthly = parseFloat(payload.monthlyEnergyGenerated || 0);
+      const monthlyEnergy = Number((measuredMonthly * capacityMultiplier).toFixed(3));
       
       const measuredTotal = parseFloat(payload.totalEnergyGenerated || 0);
       const totalEnergy = Number((measuredTotal * capacityMultiplier).toFixed(3));
       
-      lastSolarData = { totalSolarPower, dailyEnergy, totalEnergy };
+      lastSolarData = { totalSolarPower, dailyEnergy, monthlyEnergy, totalEnergy };
       
       // Insert into TimescaleDB with combined data
       await query(

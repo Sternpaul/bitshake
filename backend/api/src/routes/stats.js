@@ -1,4 +1,5 @@
 import { query } from '../db.js';
+import { getSolarData } from '../mqtt-bridge.js';
 
 /**
  * Register stats routes.
@@ -118,6 +119,7 @@ export default async function statsRoutes(fastify) {
           cost: parseFloat(month.consumed_month || 0) * electricityPrice,
           earnings: parseFloat(month.exported_month || 0) * feedinTariff,
         },
+        inverter_stats: getSolarData(),
         settings: {
           electricity_price: electricityPrice,
           feedin_tariff: feedinTariff,

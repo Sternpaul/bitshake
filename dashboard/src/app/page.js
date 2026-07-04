@@ -124,12 +124,21 @@ function DashboardContent() {
             loading={loading}
           />
           <KPICard
-            icon="☀️"
+            icon="⚡"
             label="Heutige Einspeisung"
             value={formatNumber(today?.exported_kwh)}
             unit="kWh"
             variant="solar"
             detail="Ins Netz eingespeist"
+            loading={loading}
+          />
+          <KPICard
+            icon="☀️"
+            label="Solarproduktion (Marstek)"
+            value={overview?.inverter_stats ? formatNumber(overview.inverter_stats.dailyEnergy) : '—'}
+            unit="kWh"
+            variant="solar"
+            detail={overview?.inverter_stats ? `Monat: ${formatNumber(overview.inverter_stats.monthlyEnergy)} kWh | Gesamt: ${formatNumber(overview.inverter_stats.totalEnergy)} kWh` : 'Keine Daten'}
             loading={loading}
           />
           <KPICard
