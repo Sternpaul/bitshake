@@ -117,6 +117,7 @@ services:
       MQTT_USERNAME: ${MQTT_USER}
       MQTT_PASSWORD: ${MQTT_PASSWORD}
       DEVICE_0: "HMI-1:${MARSTEK_MAC}"
+      POLLING_INTERVAL: "15"
     networks:
       - bitshake-net
 

@@ -28,20 +28,20 @@ Electricity Meter ──(IR)──> Bitshake Air (Tasmota)
                     │   Oracle Cloud VM   │
                     │   (Docker Compose)  │
                     │                     │
-                    │ ┌─────────────────┐ │
-                    │ │  Fastify API    │ │ ← REST API
-                    │ │  + MQTT Bridge  │ │
-                    │ └────────┬────────┘ │
-                    │          │          │
-                    │ ┌────────▼────────┐ │
-                    │ │  TimescaleDB    │ │ ← Time-series optimized
-                    │ │  (PostgreSQL)   │ │
-                    │ └─────────────────┘ │
-                    │ ┌─────────────────┐ │
-                    │ │   Cloudflared   │ │ ← Outbound Tunnel
-                    │ │     Tunnel      │ │
-                    │ └─────────────────┘ │
-                    └─────────┬───────────┘
+                    │ ┌─────────────────┐ │     ┌──────────────────┐
+                    │ │  Fastify API    │ │  ←  │  hm2mqtt (bridge)│ ← Solar Data
+                    │ │  + MQTT Bridge  │ │     └──────────────────┘
+                    │ └────────┬────────┘ │              ▲
+                    │          │          │              │ Local MQTT
+                    │ ┌────────▼────────┐ │     ┌────────▼─────────┐
+                    │ │  TimescaleDB    │ │     │   hame-relay     │
+                    │ │  (PostgreSQL)   │ │     │   (mock cloud)   │
+                    │ └─────────────────┘ │     └──────────────────┘
+                    │ ┌─────────────────┐ │              ▲
+                    │ │   Cloudflared   │ │              │ Cloud connection
+                    │ │     Tunnel      │ │     ┌────────▼─────────┐
+                    │ └─────────────────┘ │     │ Marstek Inverter │
+                    └─────────┬───────────┘     └──────────────────┘
                               │
                               │ HTTPS (Cloudflare Edge)
                               ▼
@@ -59,6 +59,7 @@ Electricity Meter ──(IR)──> Bitshake Air (Tasmota)
 - **Daily Power Curve** — Consumption vs. solar feed-in over 24 hours
 - **Weekly Energy Bars** — Stacked bar chart (import vs. export per day)
 - **Monthly Trend** — Area chart showing daily consumption trend
+- **Solar Generation Integration** — Direct integration with Marstek/Hame Microinverters. Total Solar generation dynamically recorded and visualized alongside grid data.
 
 ### Analytics
 - **Multi-range analysis** — 24 hours, 7 days, 30 days, 1 year
@@ -252,7 +253,10 @@ bitshake/
 | `DB_NAME` | — | `bitshake` | Database name |
 | `DB_USER` | — | `bitshake` | Database user |
 | `MQTT_USER` | — | `bitshake` | MQTT username |
-| `MQTT_TOPIC` | — | `tele/+/SENSOR` | MQTT topic filter |
+| `MQTT_TOPIC` | — | `tele/+/SENSOR,hm2mqtt/+/device/+/data` | MQTT topic filter |
+| `HAME_USER` | ✅ | — | Email for Marstek/Hame Cloud Account |
+| `HAME_PASS` | ✅ | — | Password for Marstek/Hame Cloud |
+| `MARSTEK_MAC` | ✅ | — | MAC address of the microinverter |
 
 ### Dashboard (`dashboard/.env.local`)
 

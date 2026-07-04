@@ -4,12 +4,8 @@ import { query } from './db.js';
 const MQTT_HOST = process.env.MQTT_HOST || 'mqtt://mosquitto:1883';
 const MQTT_USER = process.env.MQTT_USER || '';
 const MQTT_PASSWORD = process.env.MQTT_PASSWORD || '';
-// We now support multiple topics: the original Tasmota topic AND the homeassistant/ topic used by hm2mqtt
-const MQTT_TOPICS = (process.env.MQTT_TOPIC || 'tele/+/SENSOR').split(',').map(t => t.trim());
-// Add the homeassistant wildcard topic so we receive hm2mqtt data
-if (!MQTT_TOPICS.includes('homeassistant/#')) {
-  MQTT_TOPICS.push('homeassistant/#');
-}
+// We now support multiple topics: the original Tasmota topic AND the hm2mqtt topics
+const MQTT_TOPICS = (process.env.MQTT_TOPIC || 'tele/+/SENSOR,hm2mqtt/+/device/+/data').split(',').map(t => t.trim());
 
 let client = null;
 let lastReading = null;
@@ -40,11 +36,11 @@ export function startMqttBridge() {
     
     // Subscribe to all topics in our array
     MQTT_TOPICS.forEach(topic => {
-      client.subscribe('#', (err) => {
+      client.subscribe(topic, { qos: 1 }, (err, granted) => {
         if (err) {
-          console.error(`[MQTT] Failed to subscribe to #:`, err);
+          console.error(`[MQTT] Failed to subscribe to ${topic}:`, err);
         } else {
-          console.log(`[MQTT] Subscribed to: #`);
+          console.log(`[MQTT] Subscribed to: ${granted.map(g => g.topic).join(', ')}`);
         }
       });
     });
