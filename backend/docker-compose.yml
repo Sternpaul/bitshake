@@ -96,8 +96,7 @@ services:
       const config = {
         broker_url: url,
         username: process.env.HAME_USER,
-        password: process.env.HAME_PASS,
-        inverse_forwarding: true
+        password: process.env.HAME_PASS
       };
       fs.writeFileSync(\"/app/config/config.json\", JSON.stringify(config, null, 2));
       console.log(\"Generated config.json for \" + process.env.HAME_USER);
