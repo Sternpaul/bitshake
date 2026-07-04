@@ -147,20 +147,20 @@ async function processReading(payload, topic) {
       const hour = now.getUTCHours() + (now.getUTCMinutes() / 60);
       
       const theoRef = referenceArray.capacity * Math.exp(-0.5 * Math.pow((hour - referenceArray.peakHour) / referenceArray.curveWidth, 2));
+      const safeTheoRef = Math.max(theoRef, 50); // Prevent divide by zero
       
       let totalVirtualCapacity = 0;
       let totalEstimatedPower = 0;
 
-      if (theoRef > 50) { // Only calculate ratio if reference panel is theoretically active
-        for (const vArray of virtualArrays) {
-          totalVirtualCapacity += vArray.capacity;
-          const theoVirtual = vArray.capacity * Math.exp(-0.5 * Math.pow((hour - vArray.peakHour) / vArray.curveWidth, 2));
-          const ratio = theoVirtual / theoRef;
-          
-          // Estimate this specific virtual array and clamp to its max capacity
-          const estimatedVirtual = Math.min(measuredEast * ratio, vArray.capacity);
-          totalEstimatedPower += estimatedVirtual;
-        }
+      for (const vArray of virtualArrays) {
+        totalVirtualCapacity += vArray.capacity;
+        
+        const theoVirtual = vArray.capacity * Math.exp(-0.5 * Math.pow((hour - vArray.peakHour) / vArray.curveWidth, 2));
+        const ratio = theoVirtual / safeTheoRef;
+        
+        // Estimate this specific virtual array and clamp to its max capacity
+        const estimatedVirtual = Math.min(measuredEast * ratio, vArray.capacity);
+        totalEstimatedPower += estimatedVirtual;
       }
 
       // We explicitly separate Raw vs Estimated
