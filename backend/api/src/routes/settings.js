@@ -1,4 +1,5 @@
 import { query } from '../db.js';
+import { setSolarEstimation } from '../mqtt-bridge.js';
 
 /**
  * Register settings routes.
@@ -84,12 +85,7 @@ export default async function settingsRoutes(fastify) {
       
       // Update mqtt-bridge state if estimation changed
       if (updates.enable_solar_estimation) {
-        try {
-          const { setSolarEstimation } = await import('../mqtt-bridge.js');
-          setSolarEstimation(updates.enable_solar_estimation === 'true');
-        } catch(e) {
-          // ignore error if not loaded
-        }
+        setSolarEstimation(updates.enable_solar_estimation === 'true');
       }
 
       return reply.send({ message: 'Settings updated', data: results });
