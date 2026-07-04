@@ -4,8 +4,12 @@ import { query } from './db.js';
 const MQTT_HOST = process.env.MQTT_HOST || 'mqtt://mosquitto:1883';
 const MQTT_USER = process.env.MQTT_USER || '';
 const MQTT_PASSWORD = process.env.MQTT_PASSWORD || '';
-// We now support multiple topics: the original Tasmota topic AND the hm2mqtt topics
-const MQTT_TOPICS = (process.env.MQTT_TOPIC || 'tele/+/SENSOR,hm2mqtt/+/device/+/data').split(',').map(t => t.trim());
+// Read user topics and always ensure hm2mqtt is included for the solar integration
+const userTopic = process.env.MQTT_TOPIC || 'tele/+/SENSOR';
+const MQTT_TOPICS = userTopic.split(',').map(t => t.trim());
+if (!MQTT_TOPICS.some(t => t.includes('hm2mqtt'))) {
+  MQTT_TOPICS.push('hm2mqtt/+/device/+/data');
+}
 
 let client = null;
 let lastReading = null;
