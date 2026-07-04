@@ -14,6 +14,9 @@ let lastRawPayloadSolar = null;
 let messageCount = 0;
 let enableSolarEstimation = true;
 
+let lastGridData = { totalImport: null, totalExport: null, powerCurrent: null, powerL1: null, powerL2: null, powerL3: null };
+let lastSolarData = { totalSolarPower: null, dailyEnergy: null, totalEnergy: null };
+
 export function setSolarEstimation(enabled) {
   enableSolarEstimation = enabled;
   console.log(`[MQTT] Solar estimation set to: ${enabled}`);
@@ -149,11 +152,13 @@ async function processReading(payload, topic) {
       const measuredTotal = parseFloat(payload.totalEnergyGenerated || 0);
       const totalEnergy = Number((measuredTotal * capacityMultiplier).toFixed(3));
       
-      // Insert into TimescaleDB
+      lastSolarData = { totalSolarPower, dailyEnergy, totalEnergy };
+      
+      // Insert into TimescaleDB with combined data
       await query(
-        `INSERT INTO meter_readings (time, solar_power, solar_energy_daily, solar_energy_total)
-         VALUES ($1, $2, $3, $4)`,
-        [time, totalSolarPower, dailyEnergy, totalEnergy]
+        `INSERT INTO meter_readings (time, total_import, total_export, power_current, power_l1, power_l2, power_l3, solar_power, solar_energy_daily, solar_energy_total)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [time, lastGridData.totalImport, lastGridData.totalExport, lastGridData.powerCurrent, lastGridData.powerL1, lastGridData.powerL2, lastGridData.powerL3, totalSolarPower, dailyEnergy, totalEnergy]
       );
       
       console.log(`[DB] Inserted Solar Reading: ${totalSolarPower}W`);
@@ -189,12 +194,14 @@ async function processReading(payload, topic) {
     console.warn('[MQTT] Received SML data but no recognized values:', JSON.stringify(sml).substring(0, 200));
     return;
   }
+  
+  lastGridData = { totalImport, totalExport, powerCurrent, powerL1, powerL2, powerL3 };
 
-  // Insert into TimescaleDB
+  // Insert into TimescaleDB with combined data
   await query(
-    `INSERT INTO meter_readings (time, total_import, total_export, power_current, power_l1, power_l2, power_l3)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-    [time, totalImport, totalExport, powerCurrent, powerL1, powerL2, powerL3]
+    `INSERT INTO meter_readings (time, total_import, total_export, power_current, power_l1, power_l2, power_l3, solar_power, solar_energy_daily, solar_energy_total)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+    [time, totalImport, totalExport, powerCurrent, powerL1, powerL2, powerL3, lastSolarData.totalSolarPower, lastSolarData.dailyEnergy, lastSolarData.totalEnergy]
   );
 
   messageCount++;
