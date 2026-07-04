@@ -155,11 +155,17 @@ async function processReading(payload, topic) {
       for (const vArray of virtualArrays) {
         totalVirtualCapacity += vArray.capacity;
         
-        const theoVirtual = vArray.capacity * Math.exp(-0.5 * Math.pow((hour - vArray.peakHour) / vArray.curveWidth, 2));
+        let efficiency = 1.0;
+        if (vArray.shade === 'morgens' && hour >= 6 && hour <= 10) efficiency = 0.2;
+        else if (vArray.shade === 'mittags' && hour >= 11 && hour <= 14) efficiency = 0.2;
+        else if (vArray.shade === 'nachmittags' && hour >= 14 && hour <= 17) efficiency = 0.2;
+        else if (vArray.shade === 'abends' && hour >= 17 && hour <= 21) efficiency = 0.2;
+
+        const theoVirtual = vArray.capacity * efficiency * Math.exp(-0.5 * Math.pow((hour - vArray.peakHour) / vArray.curveWidth, 2));
         const ratio = theoVirtual / safeTheoRef;
         
-        // Estimate this specific virtual array and clamp to its max capacity
-        const estimatedVirtual = Math.min(measuredEast * ratio, vArray.capacity);
+        // Estimate this specific virtual array and clamp to its max shaded capacity
+        const estimatedVirtual = Math.min(measuredEast * ratio, vArray.capacity * efficiency);
         totalEstimatedPower += estimatedVirtual;
       }
 

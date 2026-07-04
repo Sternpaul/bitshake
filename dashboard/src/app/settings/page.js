@@ -32,7 +32,8 @@ function SettingsContent() {
       name: 'Neue Ausrichtung',
       capacity: 600,
       peakHour: 12,
-      curveWidth: 3.0
+      curveWidth: 3.0,
+      shade: 'none'
     }]);
   };
 
@@ -323,6 +324,21 @@ function SettingsContent() {
                       <option value="4">🟦 Flachdach (0-15°)</option>
                       <option value="3">🏠 Schrägdach (30-45°)</option>
                       <option value="2">🏢 Balkon vertikal (70-90°)</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group" style={{ marginTop: 'var(--space-4)' }}>
+                    <label className="form-label">Verschattung</label>
+                    <select 
+                      className="form-select" 
+                      value={arr.shade || 'none'} 
+                      onChange={e => updateVirtualArray(arr.id, 'shade', e.target.value)}
+                    >
+                      <option value="none">Keine Verschattung</option>
+                      <option value="morgens">Morgens (ca. 06:00 - 10:00 Uhr)</option>
+                      <option value="mittags">Mittags (ca. 11:00 - 14:00 Uhr)</option>
+                      <option value="nachmittags">Nachmittags (ca. 14:00 - 17:00 Uhr)</option>
+                      <option value="abends">Abends (ca. 17:00 - 21:00 Uhr)</option>
                     </select>
                   </div>
                 </div>
